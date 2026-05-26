@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jessie林老师私人订制---KET Trainer Part 1 语义建构训练器</title>
+<style>
+:root {
+  --coral: #FF8C61; --coral-light: #FFF0EB;
+  --mint: #4ECDC4;   --mint-light: #E0F7F5;
+  --sunshine: #FFD93D; --sunshine-light: #FFF9E0;
+  --lavender: #C084FC; --lavender-light: #F3E8FF;
+  --sky: #60A5FA;     --sky-light: #DBEAFE;
+  --rose: #FB7185;    --rose-light: #FFE4E6;
+  --text: #374151;    --text-light: #6B7280;
+  --bg: #FFFBF5;      --card: #FFFFFF;
+  --sidebar-width: 260px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", sans-serif;
+  background: var(--bg); color: var(--text); line-height:1.5; font-size:15px;
+  height:100vh; overflow:hidden;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,217,61,0.12) 0%, transparent 25%),
+    radial-gradient(circle at 90% 80%, rgba(78,205,196,0.12) 0%, transparent 25%),
+    radial-gradient(circle at 50% 50%, rgba(192,132,252,0.06) 0%, transparent 35%);
+}
+
+/* ===== 背景装饰 ===== */
+.bg-decorations { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.watermark { position:absolute; inset:0; }
+.watermark-line {
+  position:absolute; white-space:nowrap; font-size:1.4rem; font-weight:800;
+  color:#000; opacity:0.03; transform:rotate(-30deg); user-select:none;
+}
+.floating-emoji {
+  position:absolute; font-size:2rem; opacity:0.1; pointer-events:none;
+  animation:floaty 8s ease-in-out infinite;
+}
+@keyframes floaty {
+  0%,100%{ transform:translateY(0) rotate(0deg); }
+  50%{ transform:translateY(-24px) rotate(12deg); }
+}
+
+/* ===== 布局根 ===== */
+.app-layout { display:flex; height:100vh; overflow:hidden; position:relative; z-index:1; }
+
+/* ===== 侧边栏 ===== */
+.sidebar {
+  width: var(--sidebar-width); flex-shrink:0; display:flex; flex-direction:column;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  color: white; position:fixed; top:0; left:0; bottom:0;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.15); z-index:100;
+}
+
+/* 工作室徽章 */
+.sidebar-header {
+  padding: 18px 12px 10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.08);
+  flex-shrink:0;
+}
+.studio-badge {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding: 10px 18px; border-radius: 50px;
+  background: linear-gradient(135deg, #FFD93D 0%, #F59E0B 100%);
+  background-size: 200% 200%; color: #78350F; font-weight: 900;
+  font-size: 1.05rem; box-shadow: 0 4px 16px rgba(245,158,11,0.35);
+  animation: breathe 3s ease-in-out infinite, gradientShift 5s ease infinite;
+  letter-spacing: 0.5px; line-height:1.3;
+}
+.studio-badge .star { font-size:1.1rem; display:inline-block; }
+@keyframes breathe { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+@keyframes gradientShift { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+
+.sidebar-subtitle {
+  margin-top: 8px; font-size: 0.78rem; font-weight: 700;
+  color: rgba(255,255,255,0.55); letter-spacing: 0.5px;
+}
+
+/* 导航区标题 */
+.sidebar-nav-title {
+  padding: 10px 14px 4px; font-size: 0.7rem; font-weight: 700;
+  color: rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;
+  flex-shrink:0;
+}
+
+/* 导航滚动区 */
+.sidebar-body {
+  flex:1; overflow-y:auto; padding: 0 10px 10px;
+  scrollbar-width: thin;
+}
+.sidebar-body::-webkit-scrollbar { width:4px; }
+.sidebar-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:4px; }
+
+/* ===== 统一导航行样式 ===== */
+.nav-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 10px 6px; margin-bottom: 2px;
+  font-size: 0.82rem; font-weight: 800;
+  color: rgba(255,255,255,0.6);
+  cursor:pointer; user-select:none;
+  transition:all .2s;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.nav-row:hover { color: rgba(255,255,255,0.95); background:rgba(255,255,255,0.03); }
+.nav-row.active {
+  color: var(--sunshine);
+  border-bottom-color: rgba(255,217,61,0.4);
+  background:rgba(255,217,61,0.08);
+}
+.nav-row .row-icon { font-size:1.1rem; margin-right:4px; }
+.nav-row .row-label { flex:1; }
+.nav-row::after {
+  content:" ▸"; font-size:0.7rem; color:rgba(255,255,255,0.3);
+  transition:all .2s;
+}
+
+/* TEST 特有的展开箭头 */
+.nav-row.test-row::after { content:" ▼"; }
+.nav-row.test-row.collapsed::after { content:" ▶"; }
+
+/* 题号网格 */
+.nav-grid {
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; padding:6px 0 8px;
+}
+.nav-grid.collapsed { display:none; }
+
+.nav-item {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:8px; font-size:0.8rem; font-weight:800; cursor:pointer;
+  border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.6); transition:all .15s; min-height:36px;
+  position:relative;
+}
+.nav-item:hover {
+  border-color: var(--sky); background:rgba(255,255,255,0.08);
+  color: white; transform:translateY(-1px);
+}
+.nav-item.active {
+  background: linear-gradient(135deg, var(--lavender), #8B5CF6);
+  color: white; border-color: transparent;
+  box-shadow: 0 4px 12px rgba(139,92,246,0.35);
+}
+.nav-item.correct { background:#065F46; color:#A7F3D0; border-color:#34D399; }
+.nav-item.wrong { background:#7F1D1D; color:#FCA5A5; border-color:#F87171; }
+.nav-item .nav-tag {
+  position:absolute; bottom:2px; right:3px; font-size:0.55rem;
+  color:rgba(255,255,255,0.35); font-weight:600;
+}
+
+/* 底部电话 */
+.sidebar-footer {
+  flex-shrink:0; border-top:1px solid rgba(255,255,255,0.1);
+}
+.phone-info {
+  padding: 10px; text-align:center; font-size:0.72rem;
+  color: rgba(255,255,255,0.35);
+}
+.phone-info a { color: var(--sunshine); text-decoration:none; font-weight:700; }
+
+/* ===== 主内容区 ===== */
+.main-content {
+  margin-left: var(--sidebar-width); flex:1; overflow-y:auto;
+  padding: 20px 28px; position:relative;
+  padding-bottom: 76px;
+}
+
+/* 浮动装饰 */
+.floating-animal {
+  position:fixed; font-size:2rem; opacity:0.08; pointer-events:none; z-index:0;
+  animation:floaty 7s ease-in-out infinite;
+}
+
+/* ===== 视图容器（互斥显示） ===== */
+.view-container { display:none; animation:fadeIn 0.3s ease; }
+.view-container.active { display:block; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+/* 头部卡片 */
+.header-card {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--sky) 100%);
+  color:white; padding:22px 24px; border-radius:18px; margin-bottom:18px;
+  box-shadow:0 8px 24px rgba(78,205,196,0.25); position:relative; overflow:hidden;
+}
+.header-card::before {
+  content:"🎯"; position:absolute; top:-10px; right:20px; font-size:3.5rem; opacity:0.15; transform:rotate(15deg);
+}
+.header-card h1 { font-size:1.25rem; font-weight:800; margin-bottom:6px; position:relative; }
+.header-card .subtitle { font-size:0.9rem; opacity:0.95; position:relative; }
+.badge-group { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.badge {
+  display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
+  border-radius:16px; font-size:0.82rem; font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+.badge.pink { background:var(--rose-light); color:#BE123C; }
+.badge.blue { background:var(--sky-light); color:#1E40AF; }
+.badge.yellow { background:var(--sunshine-light); color:#92400E; }
+
+.topbar {
+  display:flex; gap:8px; justify-content:center; margin-top:14px; flex-wrap:wrap;
+}
+.btn {
+  display:inline-flex; align-items:center; gap:6px; padding:10px 18px;
+  border-radius:12px; border:none; font-size:0.9rem; font-weight:700;
+  cursor:pointer; transition:all 0.2s; font-family:inherit;
+  box-shadow:0 4px 14px rgba(0,0,0,0.1);
+}
+.btn:hover { transform:translateY(-2px); }
+.btn:active { transform:scale(0.97); }
+.btn-primary { background:linear-gradient(135deg,var(--coral),var(--rose)); color:white; }
+.btn-primary:hover { box-shadow:0 6px 24px rgba(255,140,97,0.35); }
+.btn-secondary { background:linear-gradient(135deg,var(--mint),var(--sky)); color:white; }
+.btn-secondary:hover { box-shadow:0 6px 24px rgba(78,205,196,0.3); }
+
+/* ===== 步骤卡片 ===== */
+.step-section {
+  background:var(--card); border-radius:18px; padding:18px;
+  margin-bottom:14px; box-shadow:0 6px 20px rgba(0,0,0,0.06);
+  border:2px solid transparent; position:relative; overflow:hidden;
+}
+.step-section::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; }
+.step-section.s1::before { background:linear-gradient(90deg,var(--coral),var(--rose)); }
+.step-section.s2::before { background:linear-gradient(90deg,var(--mint),var(--sky)); }
+.step-section.s3::before { background:linear-gradient(90deg,var(--sunshine),var(--coral)); }
+.step-section.s4::before { background:linear-gradient(90deg,var(--lavender),var(--sky)); }
+
+.step-header {
+  font-size:1.05rem; font-weight:800; margin-bottom:10px;
+  display:flex; align-items:center; gap:8px; color:var(--text);
+}
+.step-hint {
+  background:var(--sky-light); border-radius:10px; padding:10px 14px;
+  margin-bottom:12px; font-size:0.85rem; color:#1E40AF; line-height:1.5;
+  border-left:3px solid var(--sky);
+}
+
+.q-info { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.q-badge {
+  background:linear-gradient(135deg,var(--sky),#8B5CF6); color:#fff;
+  padding:4px 12px; border-radius:12px; font-size:0.78rem; font-weight:700; flex-shrink:0;
+}
+.q-title { font-size:1.05rem; font-weight:700; color:#1f2937; line-height:1.4; }
+
+.text-box {
+  background:#F9FAFB; border-radius:12px; padding:16px; margin-bottom:10px;
+  border:1.5px dashed #E5E7EB;
+}
+.text-label { font-size:0.72rem; color:var(--text-light); font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+.text-content { font-size:1.1rem; line-height:2; color:#37474f; }
+
+.chunk-bar {
+  display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;
+  padding:10px 12px; background:#F9FAFB; border-radius:10px; min-height:40px; align-items:center;
+  border:1.5px dashed #E5E7EB;
+}
+.chunk-bar.empty::before { content:"👆 点击单词标记颜色"; color:var(--text-light); font-size:0.8rem; }
+.chunk-tag {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:5px 10px; border-radius:12px; font-size:0.8rem; font-weight:700;
+  border:1.5px solid; animation:popIn .2s ease; white-space:nowrap;
+}
+@keyframes popIn { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
+.chunk-tag.key { border-color:var(--sunshine); background:var(--sunshine-light); color:#92400E; }
+.chunk-tag.negation { border-color:var(--rose); background:var(--rose-light); color:#BE123C; }
+.chunk-tag.limit { border-color:var(--sky); background:var(--sky-light); color:#1E40AF; }
+
+.legend-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; font-size:0.75rem; }
+.legend-item { display:flex; align-items:center; gap:4px; padding:3px 8px; border-radius:10px; background:#F3F4F6; color:#6B7280; }
+.legend-dot { width:10px; height:10px; border-radius:50%; }
+
+.chunk-table-toggle, .bracket-toggle, .view-text-toggle {
+  display:inline-flex; align-items:center; gap:6px; padding:8px 14px;
+  background:#F3F4F6; border-radius:20px; font-size:0.82rem;
+  font-weight:700; color:#6B7280; cursor:pointer; user-select:none; transition:all .2s;
+}
+.chunk-table-toggle:hover, .bracket-toggle:hover, .view-text-toggle:hover { background:#E5E7EB; }
+.chunk-table-toggle::after, .bracket-toggle::after, .view-text-toggle::after { content:" ▼"; font-size:0.65rem; }
+.chunk-table-toggle.open::after, .bracket-toggle.open::after, .view-text-toggle.open::after { content:" ▲"; }
+
+.chunk-table { width:100%; border-collapse:separate; border-spacing:0; margin-top:10px; font-size:0.82rem; display:none; }
+.chunk-table.open { display:table; }
+.chunk-table th { background:#F3F4F6; padding:8px 10px; text-align:left; font-weight:700; color:#6B7280; font-size:0.72rem; text-transform:uppercase; }
+.chunk-table td { padding:8px 10px; border-bottom:1px solid #F0F0F0; vertical-align:top; }
+.td-block { display:inline-block; padding:2px 8px; border-radius:5px; font-weight:700; font-size:0.78rem; }
+.td-block.key { background:var(--sunshine-light); color:#92400E; }
+.td-block.negation { background:var(--rose-light); color:#BE123C; }
+.td-block.limit { background:var(--sky-light); color:#1E40AF; }
+
+.bracket-text { font-size:1.08rem; line-height:2; background:#F9FAFB; padding:16px; border-radius:12px; margin-bottom:10px; border:1.5px dashed #E5E7EB; }
+.bracket-paren { color:#D1D5DB; font-weight:700; }
+.bracket-inside { color:#9CA3AF; font-style:italic; }
+.bracket-note { background:var(--sunshine-light); border-left:3px solid var(--sunshine); padding:10px 14px; border-radius:0 10px 10px 0; margin-bottom:10px; font-size:0.82rem; color:#92400E; }
+.bracket-note-label { font-weight:700; color:#B45309; margin-bottom:4px; display:block; }
+.bracket-notes-wrap { display:none; margin-top:10px; }
+.bracket-notes-wrap.open { display:block; }
+
+.bracket-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+.mic-btn {
+  width:40px; height:40px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--coral),var(--rose)); color:#fff;
+  font-size:1.2rem; cursor:pointer; box-shadow:0 4px 14px rgba(255,140,97,0.3);
+  transition:all .2s; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.mic-btn:hover { transform:scale(1.05); }
+.mic-btn.recording { animation:pulse 1.2s infinite; background:#e53935; }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(229,57,53,0.4);} 70%{box-shadow:0 0 0 12px rgba(229,57,53,0);} 100%{box-shadow:0 0 0 0 rgba(229,57,53,0);} }
+
+.voice-result-box { margin-top:10px; padding:10px; background:#FAFAFA; border-radius:10px; display:none; border:1px solid #F3F4F6; }
+.voice-result-box.show { display:block; }
+.voice-result-text { font-size:0.9rem; color:#455a64; margin-bottom:4px; }
+.voice-result-status { font-size:0.82rem; font-weight:700; }
+.voice-result-status.ok { color:#059669; }
+.voice-result-status.err { color:#e53935; }
+.fallback-input { width:100%; padding:10px 14px; border:2px solid #E5E7EB; border-radius:10px; font-size:1rem; margin-top:8px; font-family:inherit; display:none; }
+.fallback-input.show { display:block; }
+
+.pre-synonym-area { margin-top:4px; }
+.pair-pool { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.pair-pill {
+  padding:6px 12px; border-radius:14px; font-size:0.85rem; font-weight:700;
+  cursor:pointer; transition:all .2s; border:1.5px solid transparent;
+  user-select:none; min-height:30px; display:inline-flex; align-items:center;
+}
+.pair-pill:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+.pair-pill.from { background:var(--sunshine-light); color:#92400E; border-color:var(--sunshine); }
+.pair-pill.to { background:var(--sky-light); color:#1E40AF; border-color:var(--sky); }
+.pair-pill.selected { box-shadow:0 0 0 3px rgba(255,140,97,0.2); border-color:var(--coral); }
+.pair-pill.matched { background:#D1FAE5; color:#065F46; border-color:#34D399; cursor:default; }
+.pair-pill.matched::after { content:" ✓"; }
+.pair-arrow { text-align:center; font-size:0.9rem; color:var(--text-light); margin:4px 0; font-weight:700; }
+.pair-matched { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.pair-match-row { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; background:#D1FAE5; border-radius:6px; font-size:0.78rem; color:#065F46; font-weight:700; }
+.synonym-feedback { font-size:0.85rem; margin-top:6px; min-height:20px; font-weight:700; }
+.synonym-feedback.ok { color:#059669; }
+.synonym-feedback.err { color:#e53935; }
+
+.options-locked-hint { background:var(--rose-light); color:#BE123C; padding:10px; border-radius:10px; font-size:0.85rem; font-weight:700; margin-bottom:10px; text-align:center; border:1.5px dashed var(--rose); }
+.options-grid.locked { opacity:0.35; pointer-events:none; filter:grayscale(0.7); }
+.options-title { font-size:0.85rem; font-weight:700; color:#6B7280; margin:10px 0 6px; }
+.options-grid { display:grid; grid-template-columns:1fr; gap:6px; }
+.option-card {
+  border:1.5px solid #E5E7EB; border-radius:10px; padding:8px 10px;
+  cursor:pointer; transition:all .2s; background:#fff; position:relative;
+}
+.option-card:hover { border-color:var(--sky); box-shadow:0 2px 8px rgba(96,165,250,0.15); }
+.option-card.selected { border-color:var(--coral); background:var(--coral-light); }
+.option-card.eliminated { opacity:0.5; background:#F9FAFB; border-color:#E5E7EB; pointer-events:none; }
+.option-card.eliminated .option-id::after { content:" ✗"; color:#e53935; font-size:0.8rem; margin-left:4px; }
+.option-card.correct-reveal { border-color:#34D399; background:#ECFDF5; }
+.option-card.wrong-reveal { border-color:#e53935; background:var(--rose-light); }
+.option-id { font-weight:800; font-size:0.95rem; color:#0288d1; margin-bottom:2px; }
+.option-chunk { font-size:0.88rem; color:#455a64; line-height:1.5; }
+.opt-word { display:inline-block; padding:1px 4px; margin:0 1px; border-radius:4px; cursor:pointer; transition:all .2s; border:1px solid transparent; }
+.opt-word:hover { background:rgba(0,0,0,0.04); }
+.opt-word.struck { background:var(--rose-light); color:#BE123C; text-decoration:line-through; text-decoration-thickness:2px; cursor:default; }
+.opt-word.struck::after { content:" ✗"; font-size:0.7rem; }
+.option-full { display:none; margin-top:4px; padding-top:4px; border-top:1px dashed #E5E7EB; font-size:0.78rem; color:#6B7280; }
+.option-card.revealed .option-full { display:block; }
+.trap-badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; margin-top:4px; }
+.trap-distractor { background:var(--sunshine-light); color:#92400E; }
+.trap-detail { font-size:0.78rem; color:var(--text-light); margin-top:2px; line-height:1.4; }
+
+.feedback { margin-top:14px; padding:12px; border-radius:12px; text-align:center; font-weight:800; font-size:1rem; display:none; }
+.feedback.show { display:block; }
+.feedback.correct { background:#D1FAE5; color:#065F46; border:1.5px solid #34D399; }
+.feedback.wrong { background:var(--rose-light); color:#BE123C; border:1.5px dashed var(--rose); }
+
+.action-bar { display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
+.view-text-wrap { display:none; margin:8px 0; }
+.view-text-wrap.open { display:block; }
+
+/* ===== 同义词墙（独立整页） ===== */
+.wall-header {
+  background: linear-gradient(135deg, var(--sunshine) 0%, var(--coral) 100%);
+  color: white; padding: 22px 24px; border-radius: 18px; margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(245,158,11,0.25); position:relative; overflow:hidden;
+}
+.wall-header::before {
+  content:"🔗"; position:absolute; top:-8px; right:20px; font-size:3.5rem; opacity:0.2; transform:rotate(-10deg);
+}
+.wall-header h1 { font-size:1.3rem; font-weight:800; margin-bottom:6px; position:relative; }
+.wall-header .subtitle { font-size:0.9rem; opacity:0.95; position:relative; }
+
+.wall-controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.wall-filter-btn {
+  padding:6px 14px; border-radius:20px; border:1.5px solid #E5E7EB;
+  background:#fff; font-size:0.82rem; font-weight:700; color:#6B7280;
+  cursor:pointer; transition:all .2s;
+}
+.wall-filter-btn:hover { border-color:var(--sky); color:var(--sky); }
+.wall-filter-btn.active { background:linear-gradient(135deg,var(--lavender),#8B5CF6); color:#fff; border-color:transparent; }
+
+.wall-section { background:var(--card); border-radius:18px; box-shadow:0 6px 20px rgba(0,0,0,0.06); padding:20px; margin-bottom:16px; border:2px solid var(--sunshine); }
+.wall-section h3 { font-size:1rem; color:#92400E; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-weight:800; }
+.wall-pairs { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; }
+.wall-pair {
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  background:var(--sunshine-light); border-radius:12px; border:1.5px solid var(--sunshine);
+  transition:all .2s;
+}
+.wall-pair:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(245,158,11,0.15); }
+.wall-from, .wall-to {
+  padding:4px 10px; border-radius:8px; font-weight:700; font-size:0.88rem; cursor:pointer;
+  flex:1; text-align:center; transition:all .15s;
+}
+.wall-from { background:#FEF3C7; color:#92400E; }
+.wall-to { background:#DBEAFE; color:#1E40AF; }
+.wall-arrow { color:#9CA3AF; font-weight:800; font-size:0.9rem; }
+.wall-mic {
+  width:32px; height:32px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--coral),var(--rose)); color:#fff;
+  cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; justify-content:center;
+  transition:all .2s; box-shadow:0 2px 6px rgba(255,140,97,0.25); flex-shrink:0;
+}
+.wall-mic:hover { transform:scale(1.1); }
+.wall-mic.recording { animation:pulse 1.2s infinite; background:#e53935; }
+
+.wall-tip {
+  background:var(--mint-light); border-radius:12px; padding:14px; margin-bottom:16px;
+  border-left:4px solid var(--mint); font-size:0.85rem; color:#065F46;
+}
+
+/* ===== 核心词汇墙（独立整页） ===== */
+.vocab-header {
+  background: linear-gradient(135deg, var(--rose) 0%, var(--coral) 100%);
+  color: white; padding: 22px 24px; border-radius: 18px; margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(251,113,133,0.25); position:relative; overflow:hidden;
+}
+.vocab-header::before {
+  content:"🧱"; position:absolute; top:-8px; right:20px; font-size:3.5rem; opacity:0.2; transform:rotate(10deg);
+}
+.vocab-header h1 { font-size:1.3rem; font-weight:800; margin-bottom:6px; position:relative; }
+.vocab-header .subtitle { font-size:0.9rem; opacity:0.95; position:relative; }
+
+.vocab-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px;
+}
+.vocab-card {
+  background:var(--card); border-radius:16px; padding:16px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.06); border:2px solid #E5E7EB;
+  text-align:center; transition:all .2s; position:relative;
+}
+.vocab-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.1); border-color:var(--sky); }
+.vocab-word { font-size:1.2rem; font-weight:800; color:#1f2937; margin-bottom:4px; cursor:pointer; }
+.vocab-meaning { font-size:0.8rem; color:var(--text-light); margin-bottom:10px; }
+.vocab-actions {
+  display:flex; gap:8px; justify-content:center; align-items:center;
+}
+.vocab-play {
+  width:32px; height:32px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--mint),var(--sky)); color:#fff;
+  cursor:pointer; font-size:0.8rem; display:inline-flex; align-items:center; justify-content:center;
+  transition:all .2s; box-shadow:0 2px 6px rgba(78,205,196,0.25);
+}
+.vocab-play:hover { transform:scale(1.1); }
+.vocab-mic {
+  width:32px; height:32px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--coral),var(--rose)); color:#fff;
+  cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; justify-content:center;
+  transition:all .2s; box-shadow:0 2px 6px rgba(255,140,97,0.25);
+}
+.vocab-mic:hover { transform:scale(1.1); }
+.vocab-mic.recording { animation:pulse 1.2s infinite; background:#e53935; }
+.vocab-result {
+  margin-top:8px; font-size:0.78rem; font-weight:700; min-height:18px;
+}
+
+.vocab-section { margin-bottom:20px; }
+.vocab-section-title {
+  font-size:1rem; font-weight:800; color:#92400E; margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+
+/* ===== 底部电话栏 ===== */
+.phone-bar {
+  position:fixed; bottom:0; left:var(--sidebar-width); right:0; height:52px;
+  background:rgba(255,255,255,0.9); backdrop-filter:blur(14px) saturate(180%);
+  -webkit-backdrop-filter:blur(14px) saturate(180%);
+  border-top:1px solid rgba(0,0,0,0.06);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  z-index:1000; box-shadow:0 -2px 10px rgba(0,0,0,0.04);
+  padding:0 16px;
+}
+.phone-bar a {
+  display:flex; align-items:center; gap:8px;
+  color:var(--text); text-decoration:none; font-weight:700;
+  font-size:0.95rem; padding:6px 16px; border-radius:24px;
+  transition:background .2s;
+}
+.phone-bar a:hover { background:rgba(0,0,0,0.04); }
+.phone-icon { display:inline-block; font-size:1.4rem; animation:phoneSwing 2.5s ease-in-out infinite; transform-origin:center bottom; }
+@keyframes phoneSwing { 0%,100%{transform:rotate(-10deg);} 50%{transform:rotate(10deg);} }
+
+/* ===== 响应式 ===== */
+@media (max-width:767px){
+  .app-layout { flex-direction:column; }
+  .sidebar { width:100%; height:auto; max-height:42vh; position:relative; box-shadow:none; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .sidebar-header { padding:12px 10px 6px; }
+  .studio-badge { font-size:0.95rem; padding:8px 14px; }
+  .sidebar-subtitle { font-size:0.72rem; }
+  .sidebar-nav-title { padding:6px 12px 2px; }
+  .sidebar-body { padding:0 8px 8px; max-height:180px; }
+  .nav-grid { grid-template-columns:repeat(6, 1fr); gap:4px; }
+  .nav-item { font-size:0.78rem; min-height:32px; border-radius:6px; }
+  .phone-info { display:none; }
+  .main-content { margin-left:0; padding:12px; padding-bottom:72px; }
+  .phone-bar { left:0; }
+  .header-card { padding:16px 18px; }
+  .header-card h1 { font-size:1.1rem; }
+  .step-section { padding:14px; }
+  .wall-pairs { grid-template-columns:1fr; }
+  .vocab-grid { grid-template-columns:repeat(2, 1fr); }
+}
+/* ===== 圈关键词功能补充样式 ===== */
+.word { display:inline; padding:3px 4px; border-radius:4px; cursor:pointer; transition:all .2s; position:relative; border:2px solid transparent; margin:0 1px; font-size:1.1rem; }
+.word:hover { background:rgba(0,0,0,0.04); }
+.word.marked-key { background:var(--sunshine); font-weight:700; }
+.word.marked-negation { background:var(--rose); color:#fff; font-weight:700; }
+.word.marked-limit { background:var(--sky); color:#fff; font-weight:700; }
+
+/* 颜色选择器 */
+.color-picker { display:none; position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#fff; border-radius:24px; padding:6px 10px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:100; gap:6px; white-space:nowrap; }
+.color-picker.show { display:flex; }
+.color-dot { width:32px; height:32px; border-radius:50%; cursor:pointer; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition:transform .2s; flex-shrink:0; }
+.color-dot:hover { transform:scale(1.2); }
+.color-dot.clear { background:#fff; border:2px dashed #bdbdbd; display:flex; align-items:center; justify-content:center; font-size:0.8rem; color:#999; }
+
+</style>
+</head>
+<body>
+
+<!-- 背景层 -->
+<div class="bg-decorations">
+  <div class="watermark" id="watermark"></div>
+  <div id="floatingEmojis"></div>
+</div>
+
+<!-- 应用主体 -->
+<div class="app-layout">
+  <!-- 左侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="studio-badge">
+        <span class="star">⭐</span>
+        林老师英语工作室
+        <span class="star">⭐</span>
+      </div>
+      <div class="sidebar-subtitle">KET套卷系列 -- Trainer 1</div>
+    </div>
+
+    <div class="sidebar-nav-title">题目导航</div>
+    <div class="sidebar-body" id="sidebarBody">
+      <!-- TEST 1 -->
+      <div class="test-group">
+        <div class="nav-row test-row" onclick="toggleTest(this)">TEST 1</div>
+        <div class="nav-grid">
+          <div class="nav-item active" onclick="switchToQuestion(1)" data-qid="1"><span class="nav-tag">通知</span>1</div>
+          <div class="nav-item" onclick="switchToQuestion(2)" data-qid="2"><span class="nav-tag">邮件</span>2</div>
+          <div class="nav-item" onclick="switchToQuestion(3)" data-qid="3"><span class="nav-tag">告示</span>3</div>
+          <div class="nav-item" onclick="switchToQuestion(4)" data-qid="4"><span class="nav-tag">告示</span>4</div>
+          <div class="nav-item" onclick="switchToQuestion(5)" data-qid="5"><span class="nav-tag">通知</span>5</div>
+          <div class="nav-item" onclick="switchToQuestion(6)" data-qid="6"><span class="nav-tag">广告</span>6</div>
+        </div>
+      </div>
+      <!-- TEST 2 -->
+      <div class="test-group">
+        <div class="nav-row test-row collapsed" onclick="toggleTest(this)">TEST 2</div>
+        <div class="nav-grid collapsed">
+          <div class="nav-item" onclick="switchToQuestion(7)" data-qid="7"><span class="nav-tag">告示</span>7</div>
+          <div class="nav-item" onclick="switchToQuestion(8)" data-qid="8"><span class="nav-tag">邮件</span>8</div>
+          <div class="nav-item" onclick="switchToQuestion(9)" data-qid="9"><span class="nav-tag">通知</span>9</div>
+          <div class="nav-item" onclick="switchToQuestion(10)" data-qid="10"><span class="nav-tag">通知</span>10</div>
+          <div class="nav-item" onclick="switchToQuestion(11)" data-qid="11"><span class="nav-tag">告示</span>11</div>
+          <div class="nav-item" onclick="switchToQuestion(12)" data-qid="12"><span class="nav-tag">广告</span>12</div>
+        </div>
+      </div>
+      <!-- TEST 3 -->
+      <div class="test-group">
+        <div class="nav-row test-row collapsed" onclick="toggleTest(this)">TEST 3</div>
+        <div class="nav-grid collapsed">
+          <div class="nav-item" onclick="switchToQuestion(13)" data-qid="13"><span class="nav-tag">邮件</span>13</div>
+          <div class="nav-item" onclick="switchToQuestion(14)" data-qid="14"><span class="nav-tag">广告</span>14</div>
+          <div class="nav-item" onclick="switchToQuestion(15)" data-qid="15"><span class="nav-tag">通知</span>15</div>
+          <div class="nav-item" onclick="switchToQuestion(16)" data-qid="16"><span class="nav-tag">邮件</span>16</div>
+          <div class="nav-item" onclick="switchToQuestion(17)" data-qid="17"><span class="nav-tag">邮件</span>17</div>
+          <div class="nav-item" onclick="switchToQuestion(18)" data-qid="18"><span class="nav-tag">通知</span>18</div>
+        </div>
+      </div>
+      <!-- TEST 4 -->
+      <div class="test-group">
+        <div class="nav-row test-row collapsed" onclick="toggleTest(this)">TEST 4</div>
+        <div class="nav-grid collapsed">
+          <div class="nav-item" onclick="switchToQuestion(19)" data-qid="19"><span class="nav-tag">广告</span>19</div>
+          <div class="nav-item" onclick="switchToQuestion(20)" data-qid="20"><span class="nav-tag">通知</span>20</div>
+          <div class="nav-item" onclick="switchToQuestion(21)" data-qid="21"><span class="nav-tag">通知</span>21</div>
+          <div class="nav-item" onclick="switchToQuestion(22)" data-qid="22"><span class="nav-tag">邮件</span>22</div>
+          <div class="nav-item" onclick="switchToQuestion(23)" data-qid="23"><span class="nav-tag">通知</span>23</div>
+          <div class="nav-item" onclick="switchToQuestion(24)" data-qid="24"><span class="nav-tag">通知</span>24</div>
+        </div>
+      </div>
+      <!-- TEST 5 -->
+      <div class="test-group">
+        <div class="nav-row test-row collapsed" onclick="toggleTest(this)">TEST 5</div>
+        <div class="nav-grid collapsed">
+          <div class="nav-item" onclick="switchToQuestion(25)" data-qid="25"><span class="nav-tag">通知</span>25</div>
+          <div class="nav-item" onclick="switchToQuestion(26)" data-qid="26"><span class="nav-tag">告示</span>26</div>
+          <div class="nav-item" onclick="switchToQuestion(27)" data-qid="27"><span class="nav-tag">广告</span>27</div>
+          <div class="nav-item" onclick="switchToQuestion(28)" data-qid="28"><span class="nav-tag">邮件</span>28</div>
+          <div class="nav-item" onclick="switchToQuestion(29)" data-qid="29"><span class="nav-tag">通知</span>29</div>
+          <div class="nav-item" onclick="switchToQuestion(30)" data-qid="30"><span class="nav-tag">广告</span>30</div>
+        </div>
+      </div>
+      <!-- TEST 6 -->
+      <div class="test-group">
+        <div class="nav-row test-row collapsed" onclick="toggleTest(this)">TEST 6</div>
+        <div class="nav-grid collapsed">
+          <div class="nav-item" onclick="switchToQuestion(31)" data-qid="31"><span class="nav-tag">告示</span>31</div>
+          <div class="nav-item" onclick="switchToQuestion(32)" data-qid="32"><span class="nav-tag">告示</span>32</div>
+          <div class="nav-item" onclick="switchToQuestion(33)" data-qid="33"><span class="nav-tag">邮件</span>33</div>
+          <div class="nav-item" onclick="switchToQuestion(34)" data-qid="34"><span class="nav-tag">邮件</span>34</div>
+          <div class="nav-item" onclick="switchToQuestion(35)" data-qid="35"><span class="nav-tag">告示</span>35</div>
+          <div class="nav-item" onclick="switchToQuestion(36)" data-qid="36"><span class="nav-tag">邮件</span>36</div>
+        </div>
+      </div>
+      <!-- 同义词替换墙 — 独立整页入口 -->
+      <div class="nav-row" id="wallNavItem" onclick="switchToWall()">
+        <span class="row-icon">🔗</span>
+        <span class="row-label">同义词替换墙</span>
+      </div>
+
+      <!-- 核心词汇墙 — 独立整页入口 -->
+      <div class="nav-row" id="vocabNavItem" onclick="switchToVocab()">
+        <span class="row-icon">🧱</span>
+        <span class="row-label">核心词汇墙</span>
+      </div>
+    </div>
+
+    <!-- 底部电话 -->
+    <div class="sidebar-footer">
+      <div class="phone-info">
+        📞 林老师微信：<a href="tel:15915742140">15915742140</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="main-content" id="mainContent">
+    <!-- 浮动装饰 -->
+    <div class="floating-animal" style="top:5%;right:5%;animation-delay:0s;">✨</div>
+    <div class="floating-animal" style="top:25%;right:8%;animation-delay:1s;">📚</div>
+    <div class="floating-animal" style="top:50%;right:3%;animation-delay:2s;">🎯</div>
+    <div class="floating-animal" style="top:75%;right:6%;animation-delay:3s;">💡</div>
+    <div class="floating-animal" style="top:90%;right:10%;animation-delay:4s;">🏆</div>
+
+    <!-- ===== 视图1：题目（动态渲染） ===== -->
+    <div class="view-container active" id="questionView">
+      <div class="container">
+        <div class="header-card">
+          <h1>🎯 KET Part 1 语义建构训练器</h1>
+          <div class="subtitle">Trainer 1 · T1-T6 全36题 · 圈关键词 → 取核心 → 同义替换 → 排除选择</div>
+          <div class="badge-group">
+            <span class="badge pink">🌟 语义建构</span>
+            <span class="badge blue">📚 同义替换</span>
+            <span class="badge yellow">🎯 干扰排除</span>
+          </div>
+          <div class="topbar">
+            <button class="btn btn-primary" onclick="checkAnswer()">检查本题</button>
+            <button class="btn btn-secondary" onclick="resetAll()">重置全部</button>
+          </div>
+        </div>
+
+        <!-- ===== 动态题目内容容器 ===== -->
+        <div id="dynamicQuestionContent"></div>
+
+      </div>
+    </div>
+
+    <!-- ===== 视图2：同义词替换墙 ===== -->
+    <div class="view-container" id="wallView">
+      <div class="wall-header">
+        <h1>🔗 同义词替换墙</h1>
+        <div class="subtitle">汇总全部 TEST 1~6 的同义替换对 · 点击 🔊 听发音 · 点 🎤 测评读音</div>
+      </div>
+
+      <div class="wall-tip">
+        💡 <strong>使用提示：</strong>点击黄色词块听"原文表达"，点击蓝色词块听"选项替换词"。按 🎤 按钮可以语音测评，系统会判断你的发音是否准确。
+      </div>
+
+      <div class="wall-controls">
+        <button class="wall-filter-btn active" onclick="filterWall('all')">全部</button>
+        <button class="wall-filter-btn" onclick="filterWall('test1')">TEST 1</button>
+        <button class="wall-filter-btn" onclick="filterWall('test2')">TEST 2</button>
+        <button class="wall-filter-btn" onclick="filterWall('test3')">TEST 3</button>
+        <button class="wall-filter-btn" onclick="filterWall('test4')">TEST 4</button>
+        <button class="wall-filter-btn" onclick="filterWall('test5')">TEST 5</button>
+        <button class="wall-filter-btn" onclick="filterWall('test6')">TEST 6</button>
+      </div>
+
+      <div class="wall-section" data-test="test1">
+        <h3>📘 TEST 1 同义替换</h3>
+        <div class="wall-pairs">
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('this afternoon's football class')">this afternoon's football class 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the football class today')">the football class today 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the football class today',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('will be tomorrow instead')">will be tomorrow instead 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('has moved to tomorrow / is on a different day')">has moved to tomorrow / is on a different day 🔊</span>
+            <button class="wall-mic" onclick="assessWord('has moved to tomorrow / is on a different day',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Mr Hall is away today')">Mr Hall is away today 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('Mr Hall can't come today')">Mr Hall can't come today 🔊</span>
+            <button class="wall-mic" onclick="assessWord('Mr Hall can't come today',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('finished with that book')">finished with that book 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('finished reading')">finished reading 🔊</span>
+            <button class="wall-mic" onclick="assessWord('finished reading',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('I lent you')">I lent you 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the book belongs to Louise')">the book belongs to Louise 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the book belongs to Louise',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('my brother needs it')">my brother needs it 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('someone else needs the book')">someone else needs the book 🔊</span>
+            <button class="wall-mic" onclick="assessWord('someone else needs the book',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Picnic area')">Picnic area 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('for picnics / for eating outdoors')">for picnics / for eating outdoors 🔊</span>
+            <button class="wall-mic" onclick="assessWord('for picnics / for eating outdoors',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('No ball games')">No ball games 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('can't play ball games / ball games are not allowed')">can't play ball games / ball games are not allowed 🔊</span>
+            <button class="wall-mic" onclick="assessWord('can't play ball games / ball games are not allowed',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('here')">here 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('in this area')">in this area 🔊</span>
+            <button class="wall-mic" onclick="assessWord('in this area',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('open from 12')">open from 12 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('opens at midday / opens after 12')">opens at midday / opens after 12 🔊</span>
+            <button class="wall-mic" onclick="assessWord('opens at midday / opens after 12',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Children must be with an adult')">Children must be with an adult 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('children cannot go alone / need a grown-up')">children cannot go alone / need a grown-up 🔊</span>
+            <button class="wall-mic" onclick="assessWord('children cannot go alone / need a grown-up',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('must')">must 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('have to / need to')">have to / need to 🔊</span>
+            <button class="wall-mic" onclick="assessWord('have to / need to',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('don't use the car')">don't use the car 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('shouldn't drive / leave the car at home')">shouldn't drive / leave the car at home 🔊</span>
+            <button class="wall-mic" onclick="assessWord('shouldn't drive / leave the car at home',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Coming on foot')">Coming on foot 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('walk / walking')">walk / walking 🔊</span>
+            <button class="wall-mic" onclick="assessWord('walk / walking',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('is healthy')">is healthy 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('good for health / keeps you fit')">good for health / keeps you fit 🔊</span>
+            <button class="wall-mic" onclick="assessWord('good for health / keeps you fit',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Buy two')">Buy two 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('if you buy two pizzas')">if you buy two pizzas 🔊</span>
+            <button class="wall-mic" onclick="assessWord('if you buy two pizzas',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('third one for free')">third one for free 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the next one is free / you get one free')">the next one is free / you get one free 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the next one is free / you get one free',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Mon—Fri only')">Mon—Fri only 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('not available at weekends / only on weekdays')">not available at weekends / only on weekdays 🔊</span>
+            <button class="wall-mic" onclick="assessWord('not available at weekends / only on weekdays',this)">🎤</button>
+          </div>
+        </div>
+      </div>
+      <div class="wall-section" data-test="test2">
+        <h3>📘 TEST 2 同义替换</h3>
+        <div class="wall-pairs">
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('do not enter')">do not enter 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('can't go into')">can't go into 🔊</span>
+            <button class="wall-mic" onclick="assessWord('can't go into',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('pool')">pool 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('swim')">swim 🔊</span>
+            <button class="wall-mic" onclick="assessWord('swim',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('used the shower')">used the shower 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('wash / have a shower')">wash / have a shower 🔊</span>
+            <button class="wall-mic" onclick="assessWord('wash / have a shower',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('before')">before 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('first / need to')">first / need to 🔊</span>
+            <button class="wall-mic" onclick="assessWord('first / need to',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('old photos')">old photos 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('old picture / photograph')">old picture / photograph 🔊</span>
+            <button class="wall-mic" onclick="assessWord('old picture / photograph',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('send me one')">send me one 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('give him one / lend him one')">give him one / lend him one 🔊</span>
+            <button class="wall-mic" onclick="assessWord('give him one / lend him one',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('for school')">for school 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('for a school project / homework')">for a school project / homework 🔊</span>
+            <button class="wall-mic" onclick="assessWord('for a school project / homework',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Memory full')">Memory full 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('no more space / not enough storage')">no more space / not enough storage 🔊</span>
+            <button class="wall-mic" onclick="assessWord('no more space / not enough storage',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('delete files')">delete files 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('remove files / get rid of files')">remove files / get rid of files 🔊</span>
+            <button class="wall-mic" onclick="assessWord('remove files / get rid of files',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('buy more space')">buy more space 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('purchase extra storage')">purchase extra storage 🔊</span>
+            <button class="wall-mic" onclick="assessWord('purchase extra storage',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('arrive no later than 8:40')">arrive no later than 8:40 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('be there by 8:40')">be there by 8:40 🔊</span>
+            <button class="wall-mic" onclick="assessWord('be there by 8:40',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Coach leaves at 8:50')">Coach leaves at 8:50 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the bus goes at 8:50')">the bus goes at 8:50 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the bus goes at 8:50',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('School gates open at 8:30')">School gates open at 8:30 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('can enter school from 8:30')">can enter school from 8:30 🔊</span>
+            <button class="wall-mic" onclick="assessWord('can enter school from 8:30',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('use the stairs')">use the stairs 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('walk up the stairs / take the stairs')">walk up the stairs / take the stairs 🔊</span>
+            <button class="wall-mic" onclick="assessWord('walk up the stairs / take the stairs',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('if you can')">if you can 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('when possible')">when possible 🔊</span>
+            <button class="wall-mic" onclick="assessWord('when possible',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('stay fit')">stay fit 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('keep fit / healthy / exercise')">keep fit / healthy / exercise 🔊</span>
+            <button class="wall-mic" onclick="assessWord('keep fit / healthy / exercise',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Buy tickets to four films')">Buy tickets to four films 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('if you see four films')">if you see four films 🔊</span>
+            <button class="wall-mic" onclick="assessWord('if you see four films',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('don't need to pay for the next one')">don't need to pay for the next one 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the fifth film is free')">the fifth film is free 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the fifth film is free',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('until 5:30 pm')">until 5:30 pm 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('before the evening / in the afternoon')">before the evening / in the afternoon 🔊</span>
+            <button class="wall-mic" onclick="assessWord('before the evening / in the afternoon',this)">🎤</button>
+          </div>
+        </div>
+      </div>
+      <div class="wall-section" data-test="test3">
+        <h3>📘 TEST 3 同义替换</h3>
+        <div class="wall-pairs">
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('football practice')">football practice 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('football training')">football training 🔊</span>
+            <button class="wall-mic" onclick="assessWord('football training',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('will be on Wednesday...but it isn't')">will be on Wednesday...but it isn't 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('not on Wednesday / changed')">not on Wednesday / changed 🔊</span>
+            <button class="wall-mic" onclick="assessWord('not on Wednesday / changed',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('it's on Thursday')">it's on Thursday 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('on Thursday instead')">on Thursday instead 🔊</span>
+            <button class="wall-mic" onclick="assessWord('on Thursday instead',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Meet Ralph Sparks')">Meet Ralph Sparks 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('see the writer / meet the author')">see the writer / meet the author 🔊</span>
+            <button class="wall-mic" onclick="assessWord('see the writer / meet the author',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Hear how he got ideas')">Hear how he got ideas 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('listen to him talk about')">listen to him talk about 🔊</span>
+            <button class="wall-mic" onclick="assessWord('listen to him talk about',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Book signing after talk')">Book signing after talk 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('he'll sign books afterwards')">he'll sign books afterwards 🔊</span>
+            <button class="wall-mic" onclick="assessWord('he'll sign books afterwards',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Tickets available')">Tickets available 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('you can get tickets')">you can get tickets 🔊</span>
+            <button class="wall-mic" onclick="assessWord('you can get tickets',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('See Mr Goss')">See Mr Goss 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('speak to Mr Goss / contact Mr Goss')">speak to Mr Goss / contact Mr Goss 🔊</span>
+            <button class="wall-mic" onclick="assessWord('speak to Mr Goss / contact Mr Goss',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('includes coach transport')">includes coach transport 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('transport is provided / coach included')">transport is provided / coach included 🔊</span>
+            <button class="wall-mic" onclick="assessWord('transport is provided / coach included',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('left my scarf')">left my scarf 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('forgot her scarf')">forgot her scarf 🔊</span>
+            <button class="wall-mic" onclick="assessWord('forgot her scarf',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('in your flat')">in your flat 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('at Jenny's apartment')">at Jenny's apartment 🔊</span>
+            <button class="wall-mic" onclick="assessWord('at Jenny's apartment',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Have you seen it?')">Have you seen it? 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('is looking for it / wants to know if Jenny found it')">is looking for it / wants to know if Jenny found it 🔊</span>
+            <button class="wall-mic" onclick="assessWord('is looking for it / wants to know if Jenny found it',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('broke my tennis racket')">broke my tennis racket 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('his racket is broken')">his racket is broken 🔊</span>
+            <button class="wall-mic" onclick="assessWord('his racket is broken',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Can I use yours?')">Can I use yours? 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('wants to borrow Ben's racket')">wants to borrow Ben's racket 🔊</span>
+            <button class="wall-mic" onclick="assessWord('wants to borrow Ben's racket',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('for the competition on Saturday')">for the competition on Saturday 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('to play in the match')">to play in the match 🔊</span>
+            <button class="wall-mic" onclick="assessWord('to play in the match',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('give it back on Sunday')">give it back on Sunday 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('return it after')">return it after 🔊</span>
+            <button class="wall-mic" onclick="assessWord('return it after',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Class 3 are too large for Room 7B')">Class 3 are too large for Room 7B 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('Class 3 doesn't fit in 7B')">Class 3 doesn't fit in 7B 🔊</span>
+            <button class="wall-mic" onclick="assessWord('Class 3 doesn't fit in 7B',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('join Class 4 in Room 7C')">join Class 4 in Room 7C 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('go to Room 7C with Class 4')">go to Room 7C with Class 4 🔊</span>
+            <button class="wall-mic" onclick="assessWord('go to Room 7C with Class 4',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('today for geography')">today for geography 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('this lesson / today's geography class')">this lesson / today's geography class 🔊</span>
+            <button class="wall-mic" onclick="assessWord('this lesson / today's geography class',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('will be back tomorrow')">will be back tomorrow 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('returns tomorrow')">returns tomorrow 🔊</span>
+            <button class="wall-mic" onclick="assessWord('returns tomorrow',this)">🎤</button>
+          </div>
+        </div>
+      </div>
+      <div class="wall-section" data-test="test4">
+        <h3>📘 TEST 4 同义替换</h3>
+        <div class="wall-pairs">
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Buy two tickets')">Buy two tickets 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('if you buy two')">if you buy two 🔊</span>
+            <button class="wall-mic" onclick="assessWord('if you buy two',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('get a third one half price')">get a third one half price 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the third ticket is 50% cheaper')">the third ticket is 50% cheaper 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the third ticket is 50% cheaper',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('until end of week')">until end of week 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('this week only / offer ends soon')">this week only / offer ends soon 🔊</span>
+            <button class="wall-mic" onclick="assessWord('this week only / offer ends soon',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('only take you...if your parents have said it's OK')">only take you...if your parents have said it's OK 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('need parents' permission')">need parents' permission 🔊</span>
+            <button class="wall-mic" onclick="assessWord('need parents' permission',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Ask them to fill in the form')">Ask them to fill in the form 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('parents must complete the form')">parents must complete the form 🔊</span>
+            <button class="wall-mic" onclick="assessWord('parents must complete the form',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('you were given')">you were given 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the form given to students')">the form given to students 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the form given to students',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Sports hall')">Sports hall 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('indoor area')">indoor area 🔊</span>
+            <button class="wall-mic" onclick="assessWord('indoor area',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('for gym and indoor sports')">for gym and indoor sports 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('can play basketball, badminton, etc.')">can play basketball, badminton, etc. 🔊</span>
+            <button class="wall-mic" onclick="assessWord('can play basketball, badminton, etc.',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Outdoor area')">Outdoor area 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('outside space')">outside space 🔊</span>
+            <button class="wall-mic" onclick="assessWord('outside space',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('still being built')">still being built 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('not finished yet / not open')">not finished yet / not open 🔊</span>
+            <button class="wall-mic" onclick="assessWord('not finished yet / not open',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('your mum could take me home')">your mum could take me home 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('ask his mum for a lift')">ask his mum for a lift 🔊</span>
+            <button class="wall-mic" onclick="assessWord('ask his mum for a lift',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('forgot to bring the money')">forgot to bring the money 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('didn't bring money / has no money')">didn't bring money / has no money 🔊</span>
+            <button class="wall-mic" onclick="assessWord('didn't bring money / has no money',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('bus ticket')">bus ticket 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the bus fare')">the bus fare 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the bus fare',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('doesn't matter if you can't read music')">doesn't matter if you can't read music 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('you don't need to read music')">you don't need to read music 🔊</span>
+            <button class="wall-mic" onclick="assessWord('you don't need to read music',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('All staff and pupils welcome')">All staff and pupils welcome 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('everyone can join / open to all')">everyone can join / open to all 🔊</span>
+            <button class="wall-mic" onclick="assessWord('everyone can join / open to all',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('First rehearsal')">First rehearsal 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('first practice')">first practice 🔊</span>
+            <button class="wall-mic" onclick="assessWord('first practice',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('not well')">not well 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('ill / sick')">ill / sick 🔊</span>
+            <button class="wall-mic" onclick="assessWord('ill / sick',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('miss a class')">miss a class 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('absent from a lesson')">absent from a lesson 🔊</span>
+            <button class="wall-mic" onclick="assessWord('absent from a lesson',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('ask a classmate')">ask a classmate 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('ask another student')">ask another student 🔊</span>
+            <button class="wall-mic" onclick="assessWord('ask another student',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('won't fall behind')">won't fall behind 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('keep up with the class')">keep up with the class 🔊</span>
+            <button class="wall-mic" onclick="assessWord('keep up with the class',this)">🎤</button>
+          </div>
+        </div>
+      </div>
+      <div class="wall-section" data-test="test5">
+        <h3>📘 TEST 5 同义替换</h3>
+        <div class="wall-pairs">
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('don't arrive later than 1:25')">don't arrive later than 1:25 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('must arrive by 1:25')">must arrive by 1:25 🔊</span>
+            <button class="wall-mic" onclick="assessWord('must arrive by 1:25',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('must all be ready by 1:30')">must all be ready by 1:30 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('need to be prepared at 1:30')">need to be prepared at 1:30 🔊</span>
+            <button class="wall-mic" onclick="assessWord('need to be prepared at 1:30',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('singing practice starts')">singing practice starts 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the practice begins')">the practice begins 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the practice begins',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('return games that aren't opened')">return games that aren't opened 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('give back unopened games')">give back unopened games 🔊</span>
+            <button class="wall-mic" onclick="assessWord('give back unopened games',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('get your money back')">get your money back 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('receive a refund')">receive a refund 🔊</span>
+            <button class="wall-mic" onclick="assessWord('receive a refund',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('opened them')">opened them 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('taken out of the packet')">taken out of the packet 🔊</span>
+            <button class="wall-mic" onclick="assessWord('taken out of the packet',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('To join, contact Mr Sponforth')">To join, contact Mr Sponforth 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('speak to Mr Sponforth to become a member')">speak to Mr Sponforth to become a member 🔊</span>
+            <button class="wall-mic" onclick="assessWord('speak to Mr Sponforth to become a member',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Read a book every two weeks')">Read a book every two weeks 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('read one book per fortnight')">read one book per fortnight 🔊</span>
+            <button class="wall-mic" onclick="assessWord('read one book per fortnight',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('tell the group what you thought')">tell the group what you thought 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('share your opinions with others')">share your opinions with others 🔊</span>
+            <button class="wall-mic" onclick="assessWord('share your opinions with others',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Everyone welcome')">Everyone welcome 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('all students can join')">all students can join 🔊</span>
+            <button class="wall-mic" onclick="assessWord('all students can join',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('haven't got any money')">haven't got any money 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('has no money')">has no money 🔊</span>
+            <button class="wall-mic" onclick="assessWord('has no money',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('lend me enough')">lend me enough 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('borrow some money')">borrow some money 🔊</span>
+            <button class="wall-mic" onclick="assessWord('borrow some money',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('get him something from the bookshop')">get him something from the bookshop 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('buy him a book')">buy him a book 🔊</span>
+            <button class="wall-mic" onclick="assessWord('buy him a book',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('pay you back')">pay you back 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('return the money')">return the money 🔊</span>
+            <button class="wall-mic" onclick="assessWord('return the money',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('two staff are ill')">two staff are ill 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('staff are sick')">staff are sick 🔊</span>
+            <button class="wall-mic" onclick="assessWord('staff are sick',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('must have at least three to open')">must have at least three to open 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('need three people to be open')">need three people to be open 🔊</span>
+            <button class="wall-mic" onclick="assessWord('need three people to be open',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('open at 9 am tomorrow')">open at 9 am tomorrow 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('opens tomorrow morning at 9')">opens tomorrow morning at 9 🔊</span>
+            <button class="wall-mic" onclick="assessWord('opens tomorrow morning at 9',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Bring us your old laptop')">Bring us your old laptop 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('give them your old laptop')">give them your old laptop 🔊</span>
+            <button class="wall-mic" onclick="assessWord('give them your old laptop',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('get a new one')">get a new one 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('buy a new laptop')">buy a new laptop 🔊</span>
+            <button class="wall-mic" onclick="assessWord('buy a new laptop',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('receive £100 off')">receive £100 off 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('get a £100 discount')">get a £100 discount 🔊</span>
+            <button class="wall-mic" onclick="assessWord('get a £100 discount',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('must still work')">must still work 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('needs to be working')">needs to be working 🔊</span>
+            <button class="wall-mic" onclick="assessWord('needs to be working',this)">🎤</button>
+          </div>
+        </div>
+      </div>
+      <div class="wall-section" data-test="test6">
+        <h3>📘 TEST 6 同义替换</h3>
+        <div class="wall-pairs">
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('don't eat ice creams here')">don't eat ice creams here 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('ice cream is not allowed')">ice cream is not allowed 🔊</span>
+            <button class="wall-mic" onclick="assessWord('ice cream is not allowed',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('aren't good for our books')">aren't good for our books 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('will damage the books')">will damage the books 🔊</span>
+            <button class="wall-mic" onclick="assessWord('will damage the books',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('our books')">our books 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the library books')">the library books 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the library books',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('FOUND')">FOUND 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('someone has found')">someone has found 🔊</span>
+            <button class="wall-mic" onclick="assessWord('someone has found',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('small blue bag')">small blue bag 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('blue bag')">blue bag 🔊</span>
+            <button class="wall-mic" onclick="assessWord('blue bag',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('with a key inside')">with a key inside 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('containing a key')">containing a key 🔊</span>
+            <button class="wall-mic" onclick="assessWord('containing a key',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Contact Mrs Thompson')">Contact Mrs Thompson 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('speak to Mrs Thompson')">speak to Mrs Thompson 🔊</span>
+            <button class="wall-mic" onclick="assessWord('speak to Mrs Thompson',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('it might be yours')">it might be yours 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('if you lost it')">if you lost it 🔊</span>
+            <button class="wall-mic" onclick="assessWord('if you lost it',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('bought two tickets')">bought two tickets 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('has two tickets')">has two tickets 🔊</span>
+            <button class="wall-mic" onclick="assessWord('has two tickets',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Jim can't come')">Jim can't come 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('Jim isn't going')">Jim isn't going 🔊</span>
+            <button class="wall-mic" onclick="assessWord('Jim isn't going',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Are you interested?')">Are you interested? 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('wants to know if Linda wants to go')">wants to know if Linda wants to go 🔊</span>
+            <button class="wall-mic" onclick="assessWord('wants to know if Linda wants to go',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Call me')">Call me 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('phone her')">phone her 🔊</span>
+            <button class="wall-mic" onclick="assessWord('phone her',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Congratulations')">Congratulations 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('well done')">well done 🔊</span>
+            <button class="wall-mic" onclick="assessWord('well done',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('you passed maths')">you passed maths 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('succeeded in maths exam')">succeeded in maths exam 🔊</span>
+            <button class="wall-mic" onclick="assessWord('succeeded in maths exam',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Have a great birthday on Saturday')">Have a great birthday on Saturday 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('birthday is this Saturday')">birthday is this Saturday 🔊</span>
+            <button class="wall-mic" onclick="assessWord('birthday is this Saturday',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('you'll be 15')">you'll be 15 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('turning 15')">turning 15 🔊</span>
+            <button class="wall-mic" onclick="assessWord('turning 15',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('NO EXIT')">NO EXIT 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('can't leave by this door')">can't leave by this door 🔊</span>
+            <button class="wall-mic" onclick="assessWord('can't leave by this door',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('isn't working correctly')">isn't working correctly 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('is broken / not functioning')">is broken / not functioning 🔊</span>
+            <button class="wall-mic" onclick="assessWord('is broken / not functioning',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('use the door opposite')">use the door opposite 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('use the other door across from this one')">use the other door across from this one 🔊</span>
+            <button class="wall-mic" onclick="assessWord('use the other door across from this one',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('leave the room')">leave the room 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('exit')">exit 🔊</span>
+            <button class="wall-mic" onclick="assessWord('exit',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('Thanks to all my guests')">Thanks to all my guests 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('thanking the people who came')">thanking the people who came 🔊</span>
+            <button class="wall-mic" onclick="assessWord('thanking the people who came',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('I had a great party')">I had a great party 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('the party was enjoyable')">the party was enjoyable 🔊</span>
+            <button class="wall-mic" onclick="assessWord('the party was enjoyable',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('made new friends')">made new friends 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('met new people')">met new people 🔊</span>
+            <button class="wall-mic" onclick="assessWord('met new people',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('the pictures I took')">the pictures I took 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('photos he took')">photos he took 🔊</span>
+            <button class="wall-mic" onclick="assessWord('photos he took',this)">🎤</button>
+          </div>
+          <div class="wall-pair">
+            <span class="wall-from" onclick="speakWord('add...to my website')">add...to my website 🔊</span>
+            <span class="wall-arrow">→</span>
+            <span class="wall-to" onclick="speakWord('put...online / upload')">put...online / upload 🔊</span>
+            <button class="wall-mic" onclick="assessWord('put...online / upload',this)">🎤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 视图3：核心词汇墙 ===== -->
+    <div class="view-container" id="vocabView">
+      <div class="vocab-header">
+        <h1>🧱 核心词汇墙</h1>
+        <div class="subtitle">KET Part 1 高频核心词汇总 (Trainer 1 T1-T6) · 点击 🔊 听发音 · 点 🎤 测评读音</div>
+      </div>
+
+      <div class="wall-tip">
+        💡 <strong>使用提示：</strong>点击单词听发音，按 🎤 按钮读出单词，系统会判断你的发音是否准确。
+      </div>
+
+      <div class="vocab-section">
+        <div class="vocab-section-title">📘 TEST 1 核心词</div>
+        <div class="vocab-grid">
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('instead')">instead</div>
+            <div class="vocab-meaning">adv. 代替/改期</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('instead')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('instead',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-instead"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('away')">away</div>
+            <div class="vocab-meaning">adj. 不在</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('away')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('away',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-away"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('finished')">finished</div>
+            <div class="vocab-meaning">adj. 读完的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('finished')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('finished',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-finished"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('lent')">lent</div>
+            <div class="vocab-meaning">v. 借出(lend过去式)</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('lent')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('lent',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-lent"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('picnic')">picnic</div>
+            <div class="vocab-meaning">n. 野餐</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('picnic')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('picnic',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-picnic"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('museum')">museum</div>
+            <div class="vocab-meaning">n. 博物馆</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('museum')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('museum',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-museum"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('adult')">adult</div>
+            <div class="vocab-meaning">n. 成年人</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('adult')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('adult',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-adult"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('healthy')">healthy</div>
+            <div class="vocab-meaning">adj. 健康的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('healthy')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('healthy',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-healthy"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('offer')">offer</div>
+            <div class="vocab-meaning">n. 优惠</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('offer')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('offer',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-offer"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('free')">free</div>
+            <div class="vocab-meaning">adj. 免费的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('free')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('free',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-free"></div>
+          </div>
+        </div>
+      </div>
+      <div class="vocab-section">
+        <div class="vocab-section-title">📗 TEST 2 核心词</div>
+        <div class="vocab-grid">
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('shower')">shower</div>
+            <div class="vocab-meaning">n. 淋浴</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('shower')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('shower',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-shower"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('enter')">enter</div>
+            <div class="vocab-meaning">v. 进入</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('enter')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('enter',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-enter"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('photos')">photos</div>
+            <div class="vocab-meaning">n. 照片</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('photos')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('photos',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-photos"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('memory')">memory</div>
+            <div class="vocab-meaning">n. 内存/记忆</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('memory')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('memory',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-memory"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('delete')">delete</div>
+            <div class="vocab-meaning">v. 删除</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('delete')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('delete',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-delete"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('coach')">coach</div>
+            <div class="vocab-meaning">n. 长途汽车</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('coach')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('coach',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-coach"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('stairs')">stairs</div>
+            <div class="vocab-meaning">n. 楼梯</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('stairs')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('stairs',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-stairs"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('ticket')">ticket</div>
+            <div class="vocab-meaning">n. 票</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('ticket')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('ticket',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-ticket"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('film')">film</div>
+            <div class="vocab-meaning">n. 电影</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('film')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('film',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-film"></div>
+          </div>
+        </div>
+      </div>
+      <div class="vocab-section">
+        <div class="vocab-section-title">📙 TEST 3 核心词</div>
+        <div class="vocab-grid">
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('practice')">practice</div>
+            <div class="vocab-meaning">n. 练习</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('practice')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('practice',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-practice"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('author')">author</div>
+            <div class="vocab-meaning">n. 作者</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('author')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('author',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-author"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('signature')">signature</div>
+            <div class="vocab-meaning">n. 签名</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('signature')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('signature',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-signature"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('available')">available</div>
+            <div class="vocab-meaning">adj. 可获得的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('available')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('available',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-available"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('scarf')">scarf</div>
+            <div class="vocab-meaning">n. 围巾</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('scarf')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('scarf',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-scarf"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('racket')">racket</div>
+            <div class="vocab-meaning">n. 球拍</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('racket')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('racket',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-racket"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('competition')">competition</div>
+            <div class="vocab-meaning">n. 比赛</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('competition')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('competition',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-competition"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('too large')">too large</div>
+            <div class="vocab-meaning">太大的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('too large')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('too large',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-too large"></div>
+          </div>
+        </div>
+      </div>
+      <div class="vocab-section">
+        <div class="vocab-section-title">📕 TEST 4 核心词</div>
+        <div class="vocab-grid">
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('half price')">half price</div>
+            <div class="vocab-meaning">半价</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('half price')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('half price',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-half price"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('fill in')">fill in</div>
+            <div class="vocab-meaning">填写</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('fill in')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('fill in',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-fill in"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('form')">form</div>
+            <div class="vocab-meaning">n. 表格</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('form')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('form',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-form"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('indoor')">indoor</div>
+            <div class="vocab-meaning">adj. 室内的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('indoor')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('indoor',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-indoor"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('outdoor')">outdoor</div>
+            <div class="vocab-meaning">adj. 室外的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('outdoor')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('outdoor',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-outdoor"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('choir')">choir</div>
+            <div class="vocab-meaning">n. 合唱团</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('choir')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('choir',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-choir"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('rehearsal')">rehearsal</div>
+            <div class="vocab-meaning">n. 排练</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('rehearsal')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('rehearsal',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-rehearsal"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('fall behind')">fall behind</div>
+            <div class="vocab-meaning">落后</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('fall behind')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('fall behind',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-fall behind"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('classmate')">classmate</div>
+            <div class="vocab-meaning">n. 同学</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('classmate')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('classmate',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-classmate"></div>
+          </div>
+        </div>
+      </div>
+      <div class="vocab-section">
+        <div class="vocab-section-title">📓 TEST 5 核心词</div>
+        <div class="vocab-grid">
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('rehearsal')">rehearsal</div>
+            <div class="vocab-meaning">n. 排练</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('rehearsal')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('rehearsal',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-rehearsal"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('refund')">refund</div>
+            <div class="vocab-meaning">n. 退款</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('refund')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('refund',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-refund"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord(' fortnight')"> fortnight</div>
+            <div class="vocab-meaning">n. 两周</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord(' fortnight')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab(' fortnight',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result- fortnight"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('lend')">lend</div>
+            <div class="vocab-meaning">v. 借出</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('lend')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('lend',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-lend"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('staff')">staff</div>
+            <div class="vocab-meaning">n. 员工</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('staff')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('staff',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-staff"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('laptop')">laptop</div>
+            <div class="vocab-meaning">n. 笔记本电脑</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('laptop')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('laptop',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-laptop"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('discount')">discount</div>
+            <div class="vocab-meaning">n. 折扣</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('discount')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('discount',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-discount"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('trade-in')">trade-in</div>
+            <div class="vocab-meaning">n. 以旧换新</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('trade-in')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('trade-in',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-trade-in"></div>
+          </div>
+        </div>
+      </div>
+      <div class="vocab-section">
+        <div class="vocab-section-title">📔 TEST 6 核心词</div>
+        <div class="vocab-grid">
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('laboratory')">laboratory</div>
+            <div class="vocab-meaning">n. 实验室</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('laboratory')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('laboratory',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-laboratory"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('found')">found</div>
+            <div class="vocab-meaning">adj. 找到的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('found')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('found',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-found"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('contact')">contact</div>
+            <div class="vocab-meaning">v. 联系</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('contact')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('contact',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-contact"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('guests')">guests</div>
+            <div class="vocab-meaning">n. 客人</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('guests')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('guests',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-guests"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('website')">website</div>
+            <div class="vocab-meaning">n. 网站</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('website')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('website',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-website"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('congratulations')">congratulations</div>
+            <div class="vocab-meaning">n. 祝贺</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('congratulations')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('congratulations',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-congratulations"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('opposite')">opposite</div>
+            <div class="vocab-meaning">adj. 对面的</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('opposite')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('opposite',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-opposite"></div>
+          </div>
+          <div class="vocab-card">
+            <div class="vocab-word" onclick="speakWord('exit')">exit</div>
+            <div class="vocab-meaning">n. 出口</div>
+            <div class="vocab-actions">
+              <button class="vocab-play" onclick="speakWord('exit')">▶</button>
+              <button class="vocab-mic" onclick="assessVocab('exit',this)">🎤</button>
+            </div>
+            <div class="vocab-result" id="vocab-result-exit"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <!-- 版权保护 -->
+<div style="text-align:center; padding:20px 0 80px; color:var(--text-light); font-size:0.8rem; opacity:0.7; margin-left:var(--sidebar-width);">
+  <div>© 林老师英语工作室 · 版权所有 · 未经授权禁止复制或商用</div>
+  <div style="margin-top:4px;">KET Part 1 语义建构训练器 · Trainer 1 全36题 · 技术支持</div>
+</div>
+</main>
+</div>
+
+<!-- 底部电话栏 -->
+<div class="phone-bar">
+  <a href="tel:15915742140">
+    <span class="phone-icon">📞</span>
+    <span>林老师微信：15915742140</span>
+  </a>
+  <div style="font-size:0.72rem;color:#9CA3AF;margin-left:12px;border-left:1px solid #E5E7EB;padding-left:12px;white-space:nowrap;">
+    © 林老师英语工作室 · KET Part 1 语义建构训练器 · 版权所有 · 未经授权禁止复制、转载、商用或二次修改
+  </div>
+</div>
+
+
+<script>
+
+const RAW_QUESTIONS = [
+  {id:1,test:1,num:1,type:"通知",type_en:"note",
+    title:"What does the note say about the football class?",text:`this afternoon's football class will be tomorrow instead, as Mr Hall is away today`,bracket:`this afternoon's football class <span class='bracket-inside'>will be tomorrow instead</span>, <span class='bracket-inside'>as Mr Hall is away today</span>`,
+    bracket_notes:["<b>will be tomorrow instead</b> = 将会改到明天（instead 是改期核心信号词）", "<b>as Mr Hall is away today</b> = 原因状语从句（as = because）"],core:`Football class → moved to tomorrow (Mr Hall away today)`,
+    pairs:[{from:"this afternoon's football class",to:"the football class today"}, {from:"will be tomorrow instead",to:"has moved to tomorrow / is on a different day"}, {from:"Mr Hall is away today",to:"Mr Hall can't come today"}],options:[{id:"A",text:"There is no football class today",struck:["no"],trap:"偷梁换柱",trap_detail:"原文是改期(instead)，并非取消(no class)",correct:false}, {id:"B",text:"Mr Hall can't come to the class today",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"You can choose to go to the class today or tomorrow",struck:["choose", "today or tomorrow"],trap:"无中生有",trap_detail:"原文 will be tomorrow 是强制改期，无 choose 含义",correct:false}]},
+  {id:2,test:1,num:2,type:"邮件",type_en:"email",
+    title:"What does Louise want Jane to do?",text:`Have you finished with that book I lent you? It's just that my brother needs it`,bracket:`Have you finished with that book <span class='bracket-inside'>I lent you</span>? <span class='bracket-inside'>It's just that</span> my brother needs it`,
+    bracket_notes:["<b>I lent you</b> = 定语从句，修饰 book（说明书是Louise借给Jane的）", "<b>It's just that</b> = 口语表达，表示'只是因为…'（委婉解释原因）"],core:`Louise wants the book back (her brother needs it)`,
+    pairs:[{from:"finished with that book",to:"finished reading"}, {from:"I lent you",to:"the book belongs to Louise"}, {from:"my brother needs it",to:"someone else needs the book"}],options:[{id:"A",text:"Louise is offering to lend Jane a book",struck:["offering to lend"],trap:"反向干扰",trap_detail:"原文是要回已借出的书(I lent you)，不是主动借出",correct:false}, {id:"B",text:"Jane should return the book to Louise",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Louise's brother has borrowed a book from Jane",struck:["Louise's brother", "borrowed", "from Jane"],trap:"张冠李戴",trap_detail:"原文是弟弟需要Louise借给Jane的那本，并非向Jane借",correct:false}]},
+  {id:3,test:1,num:3,type:"告示",type_en:"notice",
+    title:"What does the sign say?",text:`Picnic area. No ball games here`,bracket:`<span class='bracket-inside'>Picnic area</span>. No ball games here`,
+    bracket_notes:["<b>Picnic area</b> = 地点说明（ picnicking 是这里允许的）", "<b>No ball games</b> = 禁止性表达（No + 名词 = 禁止某事）"],core:`This is a picnic area → ball games NOT allowed`,
+    pairs:[{from:"Picnic area",to:"for picnics / for eating outdoors"}, {from:"No ball games",to:"can't play ball games / ball games are not allowed"}, {from:"here",to:"in this area"}],options:[{id:"A",text:"You can buy food somewhere else",struck:["buy food", "somewhere else"],trap:"无中生有",trap_detail:"原文未提 buy food",correct:false}, {id:"B",text:"Please don't eat while you are playing sport",struck:["don't eat", "while you are playing sport"],trap:"无中生有",trap_detail:"原文未提边吃边运动，且Picnic area本就是吃饭的地方",correct:false}, {id:"C",text:"People must not play ball games in this area",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:4,test:1,num:4,type:"告示",type_en:"notice",
+    title:"What does the museum notice say?",text:`Museum open from 12. Children must be with an adult`,bracket:`Museum open <span class='bracket-inside'>from 12</span>. Children must be with an adult`,
+    bracket_notes:["<b>from 12</b> = 时间限定（12点开始，不是上午）", "<b>must be with an adult</b> = 强制性要求（must 是关键情态动词）"],core:`Museum opens at 12, children need adult accompaniment`,
+    pairs:[{from:"open from 12",to:"opens at midday / opens after 12"}, {from:"Children must be with an adult",to:"children cannot go alone / need a grown-up"}, {from:"must",to:"have to / need to"}],options:[{id:"A",text:"Adults can take children to the museum in the morning",struck:["in the morning"],trap:"时间错位",trap_detail:"原文 from 12，不是 morning",correct:false}, {id:"B",text:"Adults with children over 12 will enjoy the museum",struck:["over 12", "will enjoy"],trap:"无中生有",trap_detail:"原文未提 over 12，也未提 enjoy",correct:false}, {id:"C",text:"Children cannot visit the museum without an adult",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:5,test:1,num:5,type:"通知",type_en:"message",
+    title:"What is the message about?",text:`please don't use the car … Coming on foot is healthy`,bracket:`please don't use the car … <span class='bracket-inside'>Coming on foot</span> is healthy`,
+    bracket_notes:["<b>Coming on foot</b> = 步行前来（on foot = walking）", "<b>is healthy</b> = 好处/理由说明"],core:`Don't use car → come on foot (it's healthy)`,
+    pairs:[{from:"don't use the car",to:"shouldn't drive / leave the car at home"}, {from:"Coming on foot",to:"walk / walking"}, {from:"is healthy",to:"good for health / keeps you fit"}],options:[{id:"A",text:"Pupils should walk to school",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"Parents need to drive to get to school on time",struck:["on time"],trap:"无中生有",trap_detail:"原文未提 time",correct:false}, {id:"C",text:"There is a health problem at school",struck:["health problem"],trap:"偷梁换柱",trap_detail:"原文 healthy（健康有益）≠ health problem（健康问题）",correct:false}]},
+  {id:6,test:1,num:6,type:"广告",type_en:"advert",
+    title:"What does the advertisement say?",text:`Buy two … third one for free! Offer is Mon—Fri only`,bracket:`Buy two … third one for free! <span class='bracket-inside'>Offer is Mon—Fri only</span>`,
+    bracket_notes:["<b>Buy two</b> = 条件（买两个）", "<b>third one for free</b> = 结果（第三个免费）", "<b>Mon—Fri only</b> = 时间限定（仅工作日有效）"],core:`Buy 2 get 3rd free, weekdays only`,
+    pairs:[{from:"Buy two",to:"if you buy two pizzas"}, {from:"third one for free",to:"the next one is free / you get one free"}, {from:"Mon—Fri only",to:"not available at weekends / only on weekdays"}],options:[{id:"A",text:"The restaurant isn't open at weekends",struck:["isn't open"],trap:"偷梁换柱",trap_detail:"原文只限 offer 时间，不等于店 closed",correct:false}, {id:"B",text:"The third time you visit, your meal will be free",struck:["third time", "visit"],trap:"偷梁换柱",trap_detail:"原文是 third one（第三份披萨），不是 third visit（第三次光顾）",correct:false}, {id:"C",text:"You will get a free pizza if you buy two pizzas on Tuesday",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:7,test:2,num:1,type:"告示",type_en:"notice",
+    title:"What does the notice say about the pool?",text:`From 1 October, please do not enter the pool before you have used the shower`,bracket:`<span class='bracket-inside'>From 1 October</span>, please do not enter the pool <span class='bracket-inside'>before you have used the shower</span>`,
+    bracket_notes:["<b>From 1 October</b> = 时间限定（新规生效日期）", "<b>before you have used the shower</b> = 时间条件从句（洗澡之后才能进）"],core:`From Oct 1: must shower before entering pool`,
+    pairs:[{from:"do not enter",to:"can't go into"}, {from:"pool",to:"swim"}, {from:"used the shower",to:"wash / have a shower"}, {from:"before",to:"first / need to"}],options:[{id:"A",text:"The pool is closed on October 1st",struck:["closed"],trap:"偷梁换柱",trap_detail:"原文是新规生效，并非 closed",correct:false}, {id:"B",text:"You need to wash before you swim",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"There will be a new shower at the pool",struck:["new"],trap:"无中生有",trap_detail:"原文未提 new，只是要求使用现有淋浴",correct:false}]},
+  {id:8,test:2,num:2,type:"邮件",type_en:"email",
+    title:"What does Tom want Linda to do?",text:`Do you have any old photos of people in our town wearing the clothes people wore 100 years ago? If you do, could you send me one for school?`,bracket:`Do you have any old photos <span class='bracket-inside'>of people in our town wearing the clothes people wore 100 years ago</span>? <span class='bracket-inside'>If you do, could you</span> send me one <span class='bracket-inside'>for school</span>?`,
+    bracket_notes:["<b>of people...100 years ago</b> = 定语，修饰 photos（具体要什么照片）", "<b>If you do, could you</b> = 委婉请求句型", "<b>for school</b> = 目的状语（学校作业用）"],core:`Tom wants Linda to send him an old photo for school`,
+    pairs:[{from:"old photos",to:"old picture / photograph"}, {from:"send me one",to:"give him one / lend him one"}, {from:"for school",to:"for a school project / homework"}],options:[{id:"A",text:"Send him a photograph of someone in old-fashioned clothes",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"Lend him some clothes to wear for a school event",struck:["clothes", "wear"],trap:"偷梁换柱",trap_detail:"原文要 photos，不是 clothes",correct:false}, {id:"C",text:"Describe the clothes her grandparents wore",struck:["Describe"],trap:"偷梁换柱",trap_detail:"原文要实物/照片，不是 describe",correct:false}]},
+  {id:9,test:2,num:3,type:"通知",type_en:"message",
+    title:"What does the message say?",text:`Memory full. Please delete files or click here to buy more space`,bracket:`<span class='bracket-inside'>Memory full</span>. Please delete files or <span class='bracket-inside'>click here to buy more space</span>`,
+    bracket_notes:["<b>Memory full</b> = 问题描述（存储空间已满）", "<b>click here to buy more space</b> = 解决方案二（购买扩容）"],core:`Memory full → delete files or buy more space`,
+    pairs:[{from:"Memory full",to:"no more space / not enough storage"}, {from:"delete files",to:"remove files / get rid of files"}, {from:"buy more space",to:"purchase extra storage"}],options:[{id:"A",text:"This message is on a noticeboard in a computer shop",struck:["computer shop", "noticeboard"],trap:"无中生有",trap_detail:"这是系统弹窗，不是实体店",correct:false}, {id:"B",text:"You need to do something because your computer's memory is full",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"This message is on the wall in the computer classroom",struck:["wall"],trap:"无中生有",trap_detail:"这是屏幕弹窗，不是 wall 告示",correct:false}]},
+  {id:10,test:2,num:4,type:"通知",type_en:"message",
+    title:"What does the teacher tell the pupils?",text:`Please arrive no later than 8:40, as we must all be ready by 1:30. Coach leaves at 8:50. School gates open at 8:30`,bracket:`Please arrive <span class='bracket-inside'>no later than 8:40</span>, <span class='bracket-inside'>as we must all be ready by 1:30</span>. <span class='bracket-inside'>Coach leaves at 8:50</span>. <span class='bracket-inside'>School gates open at 8:30</span>`,
+    bracket_notes:["<b>no later than 8:40</b> = 到达截止时间（= by 8:40）", "<b>as we must all be ready by 1:30</b> = 原因状语从句", "<b>Coach leaves at 8:50</b> = 出发时间（迟到就错过）", "<b>School gates open at 8:30</b> = 校门开启时间"],core:`Pupils must arrive by 8:40 (coach leaves 8:50)`,
+    pairs:[{from:"arrive no later than 8:40",to:"be there by 8:40"}, {from:"Coach leaves at 8:50",to:"the bus goes at 8:50"}, {from:"School gates open at 8:30",to:"can enter school from 8:30"}],options:[{id:"A",text:"The pupils should get to school at about 8:30",struck:["about 8:30"],trap:"张冠李戴",trap_detail:"这是 gates open 时间，不是 pupils 需到达时间",correct:false}, {id:"B",text:"The pupils must be at school by 8:40",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"The pupils should arrive at 8:50",struck:["8:50"],trap:"张冠李戴",trap_detail:"这是 coach leaves 时间，迟到就错过",correct:false}]},
+  {id:11,test:2,num:5,type:"告示",type_en:"notice",
+    title:"What does the notice say?",text:`Please use the stairs if you can. It's a great way to stay fit`,bracket:`Please use the stairs <span class='bracket-inside'>if you can</span>. <span class='bracket-inside'>It's a great way to stay fit</span>`,
+    bracket_notes:["<b>if you can</b> = 条件状语（能力允许的情况下）", "<b>It's a great way to stay fit</b> = 好处说明（解释为什么鼓励走楼梯）"],core:`Use stairs if possible → good for fitness`,
+    pairs:[{from:"use the stairs",to:"walk up the stairs / take the stairs"}, {from:"if you can",to:"when possible"}, {from:"stay fit",to:"keep fit / healthy / exercise"}],options:[{id:"A",text:"You should use the stairs if you are in a hurry",struck:["in a hurry"],trap:"无中生有",trap_detail:"原文未提 hurry",correct:false}, {id:"B",text:"You should only use the stairs if the lift is broken",struck:["lift is broken"],trap:"无中生有",trap_detail:"原文 lift 可用，只是鼓励能走则走",correct:false}, {id:"C",text:"Walking up the stairs is good exercise",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:12,test:2,num:6,type:"广告",type_en:"advert",
+    title:"What does the advertisement say?",text:`Buy tickets to four films at City Cinema this month and you don't need to pay for the next one! Offer available until 5:30 pm`,bracket:`<span class='bracket-inside'>Buy tickets to four films at City Cinema this month</span> and you don't need to pay for the next one! <span class='bracket-inside'>Offer available until 5:30 pm</span>`,
+    bracket_notes:["<b>Buy tickets to four films</b> = 条件（买四张票）", "<b>you don't need to pay for the next one</b> = 优惠结果（第五张免费）", "<b>until 5:30 pm</b> = 时间限定"],core:`Buy 4 film tickets → 5th free, offer until 5:30pm`,
+    pairs:[{from:"Buy tickets to four films",to:"if you see four films"}, {from:"don't need to pay for the next one",to:"the fifth film is free"}, {from:"until 5:30 pm",to:"before the evening / in the afternoon"}],options:[{id:"A",text:"You can see up to four films for free",struck:["up to four films for free"],trap:"偷梁换柱",trap_detail:"原文是买四部后'下一部'免费，不是前四部 free",correct:false}, {id:"B",text:"If you pay for four films, you can see a fifth one without paying",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Groups of four people can see a film free in the evenings",struck:["groups of four", "evenings"],trap:"偷梁换柱",trap_detail:"原文不是 groups，且 until 5:30 pm 是白天",correct:false}]},
+  {id:13,test:3,num:1,type:"邮件",type_en:"email",
+    title:"What does Adam tell John?",text:`I know the text says football practice will be on Wednesday this week, but it isn't – it's on Thursday`,bracket:`<span class='bracket-inside'>I know the text says football practice will be on Wednesday this week, but</span> it isn't – <span class='bracket-inside'>it's on Thursday</span>`,
+    bracket_notes:["<b>I know the text says...but</b> = 转折结构（先承认原信息，再纠正）", "<b>it isn't</b> = 否定原时间（星期三不正确）", "<b>it's on Thursday</b> = 新信息（改到星期四）"],core:`Football practice is on Thursday (not Wednesday)`,
+    pairs:[{from:"football practice",to:"football training"}, {from:"will be on Wednesday...but it isn't",to:"not on Wednesday / changed"}, {from:"it's on Thursday",to:"on Thursday instead"}],options:[{id:"A",text:"John should ask if Adam wants to play football",struck:["ask", "wants"],trap:"无中生有",trap_detail:"原文是通知改期，不是 ask/wants",correct:false}, {id:"B",text:"Adam is unable to play football this week",struck:["unable to play"],trap:"反向干扰",trap_detail:"原文 Adam 能玩，只是日期改了",correct:false}, {id:"C",text:"The football practice is on a different day from usual",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:14,test:3,num:2,type:"广告",type_en:"advert",
+    title:"What is the reader told about the book festival?",text:`Meet Ralph Sparks, author of The History of Exploring. Hear how he got ideas for his books. Book signing after talk`,bracket:`Meet Ralph Sparks, <span class='bracket-inside'>author of The History of Exploring</span>. <span class='bracket-inside'>Hear how he got ideas for his books</span>. <span class='bracket-inside'>Book signing after talk</span>`,
+    bracket_notes:["<b>author of The History of Exploring</b> = 同位语，介绍 Ralph Sparks 身份", "<b>Hear how he got ideas for his books</b> = 活动主要内容", "<b>Book signing after talk</b> = 活动后续（讲座后有签售）"],core:`Meet author Ralph Sparks → hear about his books → book signing`,
+    pairs:[{from:"Meet Ralph Sparks",to:"see the writer / meet the author"}, {from:"Hear how he got ideas",to:"listen to him talk about"}, {from:"Book signing after talk",to:"he'll sign books afterwards"}],options:[{id:"A",text:"You can buy books by Ralph Sparks there",struck:["buy books"],trap:"无中生有",trap_detail:"图书节活动，未提 buy",correct:false}, {id:"B",text:"You can listen to Ralph Sparks talking about writing",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"You can read about explorers with Ralph Sparks",struck:["read about explorers"],trap:"偷梁换柱",trap_detail:"History of Exploring 是书名，不是现场 read about",correct:false}]},
+  {id:15,test:3,num:3,type:"通知",type_en:"note",
+    title:"What does the note say?",text:`Tickets available for 4 pm show on Saturday. See Mr Goss. Price includes coach transport`,bracket:`Tickets available <span class='bracket-inside'>for 4 pm show on Saturday</span>. See Mr Goss. <span class='bracket-inside'>Price includes coach transport</span>`,
+    bracket_notes:["<b>for 4 pm show on Saturday</b> = 时间/场次限定", "<b>See Mr Goss</b> = 联系方式（去找某人）", "<b>Price includes coach transport</b> = 费用说明（已含交通）"],core:`Saturday 4pm tickets available → see Mr Goss (includes transport)`,
+    pairs:[{from:"Tickets available",to:"you can get tickets"}, {from:"See Mr Goss",to:"speak to Mr Goss / contact Mr Goss"}, {from:"includes coach transport",to:"transport is provided / coach included"}],options:[{id:"A",text:"Tell Mr Goss if you want a ticket for the Saturday trip",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"Tell Mr Goss how you want to travel",struck:["how you want to travel"],trap:"无中生有",trap_detail:"票已含 coach transport，无需另选",correct:false}, {id:"C",text:"Mr Goss will tell you if you need a ticket",struck:["will tell you if you need"],trap:"反向干扰",trap_detail:"原文是找 Mr Goss 购票/登记，不是他判定你是否需要",correct:false}]},
+  {id:16,test:3,num:4,type:"邮件",type_en:"email",
+    title:"What is Anna's message to Jenny about?",text:`I left my scarf in your flat after the party on Saturday. Have you seen it? It's the purple one`,bracket:`<span class='bracket-inside'>I left my scarf in your flat after the party on Saturday</span>. Have you seen it? <span class='bracket-inside'>It's the purple one</span>`,
+    bracket_notes:["<b>I left my scarf in your flat</b> = 核心事件（忘拿围巾）", "<b>after the party on Saturday</b> = 时间/地点背景", "<b>It's the purple one</b> = 特征描述（帮助识别）"],core:`Anna left her scarf at Jenny's flat → asking if Jenny found it`,
+    pairs:[{from:"left my scarf",to:"forgot her scarf"}, {from:"in your flat",to:"at Jenny's apartment"}, {from:"Have you seen it?",to:"is looking for it / wants to know if Jenny found it"}],options:[{id:"A",text:"Anna wants to invite Jenny to a party",struck:["invite", "party"],trap:"无中生有",trap_detail:"原文 after the party，不是 invite",correct:false}, {id:"B",text:"Anna wants Jenny to go shopping with her",struck:["shopping"],trap:"无中生有",trap_detail:"原文不是 shopping trip，是寻找失物",correct:false}, {id:"C",text:"Anna thinks she has lost something at Jenny's flat",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:17,test:3,num:5,type:"邮件",type_en:"email",
+    title:"What does Dave want Ben to do?",text:`I broke my tennis racket. Can I use yours for the competition on Saturday? I'll give it back on Sunday. By the way, have you finished the maths homework?`,bracket:`<span class='bracket-inside'>I broke my tennis racket</span>. Can I use yours <span class='bracket-inside'>for the competition on Saturday</span>? <span class='bracket-inside'>I'll give it back on Sunday</span>. <span class='bracket-inside'>By the way, have you finished the maths homework?</span>`,
+    bracket_notes:["<b>I broke my tennis racket</b> = 原因（自己的坏了）", "<b>for the competition on Saturday</b> = 目的/时间", "<b>I'll give it back on Sunday</b> = 承诺归还", "<b>By the way</b> = 顺带一提（非主要目的）"],core:`Dave broke his racket → wants to borrow Ben's for Saturday competition`,
+    pairs:[{from:"broke my tennis racket",to:"his racket is broken"}, {from:"Can I use yours?",to:"wants to borrow Ben's racket"}, {from:"for the competition on Saturday",to:"to play in the match"}, {from:"give it back on Sunday",to:"return it after"}],options:[{id:"A",text:"Dave wants Ben to play tennis with him",struck:["play tennis with"],trap:"无中生有",trap_detail:"原文是借球拍，不是邀请 play with",correct:false}, {id:"B",text:"Dave wants to borrow something from Ben",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Dave wants Ben's help with the maths homework",struck:["maths homework"],trap:"主次颠倒",trap_detail:"homework 是 By the way（顺带），非目的",correct:false}]},
+  {id:18,test:3,num:6,type:"通知",type_en:"note",
+    title:"What does the note say?",text:`Class 3 are too large for Room 7B, so they will join Class 4 in Room 7C today for geography. Mr Gregson will be back tomorrow`,bracket:`<span class='bracket-inside'>Class 3 are too large for Room 7B, so</span> they will join Class 4 <span class='bracket-inside'>in Room 7C today for geography</span>. <span class='bracket-inside'>Mr Gregson will be back tomorrow</span>`,
+    bracket_notes:["<b>Class 3 are too large for Room 7B</b> = 原因（教室太小）", "<b>in Room 7C today for geography</b> = 今天的安排", "<b>Mr Gregson will be back tomorrow</b> = 补充信息（老师明天回来）"],core:`Class 3 → join Class 4 in Room 7C today (Mr Gregson back tomorrow)`,
+    pairs:[{from:"Class 3 are too large for Room 7B",to:"Class 3 doesn't fit in 7B"}, {from:"join Class 4 in Room 7C",to:"go to Room 7C with Class 4"}, {from:"today for geography",to:"this lesson / today's geography class"}, {from:"will be back tomorrow",to:"returns tomorrow"}],options:[{id:"A",text:"There isn't a geography lesson for Class 3 tomorrow",struck:["isn't"],trap:"无中生有",trap_detail:"原文只说今天去7C，明天 Mr Gregson back，未提明天 isn't",correct:false}, {id:"B",text:"Class 4's geography lesson is at a different time today",struck:["different time"],trap:"无中生有",trap_detail:"原文未提 Class 4 时间改变",correct:false}, {id:"C",text:"Class 3 will go to a different room for their geography lesson today",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:19,test:4,num:1,type:"广告",type_en:"advert",
+    title:"What does the advertisement say?",text:`Buy two tickets for the Science Museum and get a third one half price! Last few days of this offer – until end of week`,bracket:`Buy two tickets for the Science Museum and <span class='bracket-inside'>get a third one half price</span>! <span class='bracket-inside'>Last few days of this offer – until end of week</span>`,
+    bracket_notes:["<b>get a third one half price</b> = 优惠内容（第三张半价）", "<b>Last few days of this offer</b> = 紧迫性提示", "<b>until end of week</b> = 截止时间"],core:`Buy 2 Science Museum tickets → 3rd half price (until end of week)`,
+    pairs:[{from:"Buy two tickets",to:"if you buy two"}, {from:"get a third one half price",to:"the third ticket is 50% cheaper"}, {from:"until end of week",to:"this week only / offer ends soon"}],options:[{id:"A",text:"Tickets for the Science Museum are 30% off",struck:["30% off"],trap:"偷梁换柱",trap_detail:"原文是 third half price，不是全部 30% off",correct:false}, {id:"B",text:"It is cheaper to buy three Science Museum tickets before next week",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Science Museum tickets are only available this week",struck:["only available this week"],trap:"偷梁换柱",trap_detail:"原文是 offer 截止，不是票 only available",correct:false}]},
+  {id:20,test:4,num:2,type:"通知",type_en:"note",
+    title:"What does the note say?",text:`We can only take you on the museum trip if your parents have said it's OK. Ask them to fill in the form you were given`,bracket:`We can only take you on the museum trip <span class='bracket-inside'>if your parents have said it's OK</span>. <span class='bracket-inside'>Ask them to fill in the form you were given</span>`,
+    bracket_notes:["<b>if your parents have said it's OK</b> = 条件（必须家长同意）", "<b>Ask them to fill in the form</b> = 动作要求（让家长填表）", "<b>you were given</b> = 定语从句，修饰 form"],core:`Can go on trip only if parents agree → parents must fill in form`,
+    pairs:[{from:"only take you...if your parents have said it's OK",to:"need parents' permission"}, {from:"Ask them to fill in the form",to:"parents must complete the form"}, {from:"you were given",to:"the form given to students"}],options:[{id:"A",text:"Parents can come on the museum trip",struck:["Parents can come"],trap:"无中生有",trap_detail:"原文未提家长 come",correct:false}, {id:"B",text:"Parents must complete a form for their child to go on the trip",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Pupils must fill in a form and then show it to their parents",struck:["Pupils must fill in", "show it to"],trap:"主客颠倒",trap_detail:"原文是 parents fill in，不是 pupils 填了给家长看",correct:false}]},
+  {id:21,test:4,num:3,type:"通知",type_en:"notice",
+    title:"What does the notice tell pupils about the new sports centre?",text:`Sports hall is for gym and indoor sports. Outdoor area for hockey and football. Swimming pool still being built`,bracket:`Sports hall is <span class='bracket-inside'>for gym and indoor sports</span>. <span class='bracket-inside'>Outdoor area for hockey and football</span>. <span class='bracket-inside'>Swimming pool still being built</span>`,
+    bracket_notes:["<b>for gym and indoor sports</b> = sports hall 用途", "<b>Outdoor area for hockey and football</b> = 户外场地用途", "<b>Swimming pool still being built</b> = 尚未完工（现在不能用）"],core:`Sports centre: indoor hall + outdoor area (swimming pool not ready yet)`,
+    pairs:[{from:"Sports hall",to:"indoor area"}, {from:"for gym and indoor sports",to:"can play basketball, badminton, etc."}, {from:"Outdoor area",to:"outside space"}, {from:"still being built",to:"not finished yet / not open"}],options:[{id:"A",text:"Which sports lessons pupils can have there",struck:["sports lessons"],trap:"无中生有",trap_detail:"原文讲场地设施，不是 lessons",correct:false}, {id:"B",text:"Which sports pupils can do inside and outside",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Which pupils will be good at sports there",struck:["good at sports"],trap:"无中生有",trap_detail:"原文未提水平",correct:false}]},
+  {id:22,test:4,num:4,type:"邮件",type_en:"email",
+    title:"What is Mark asking Jim to do?",text:`Do you think your mum could take me home after football practice tonight? I forgot to bring the money for my bus ticket`,bracket:`<span class='bracket-inside'>Do you think</span> your mum could take me home <span class='bracket-inside'>after football practice tonight</span>? <span class='bracket-inside'>I forgot to bring the money for my bus ticket</span>`,
+    bracket_notes:["<b>Do you think</b> = 委婉请求开头", "<b>after football practice tonight</b> = 时间", "<b>I forgot to bring the money for my bus ticket</b> = 原因（没带钱坐不了公交）"],core:`Mark forgot bus money → asks Jim if his mum can give him a lift`,
+    pairs:[{from:"your mum could take me home",to:"ask his mum for a lift"}, {from:"forgot to bring the money",to:"didn't bring money / has no money"}, {from:"bus ticket",to:"the bus fare"}],options:[{id:"A",text:"Lend him some money for the bus",struck:["Lend him some money"],trap:"偷梁换柱",trap_detail:"原文是搭车，不是 borrow money",correct:false}, {id:"B",text:"Ask his mother to take Mark home",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Invite Jim to visit him after football practice",struck:["Invite", "visit"],trap:"无中生有",trap_detail:"原文未提 invite/visit",correct:false}]},
+  {id:23,test:4,num:5,type:"通知",type_en:"notice",
+    title:"What does the notice say about the choir?",text:`It doesn't matter if you can't read music. All staff and pupils welcome. First rehearsal: Monday 15th at 4 pm`,bracket:`<span class='bracket-inside'>It doesn't matter if you can't read music</span>. All staff and pupils welcome. <span class='bracket-inside'>First rehearsal: Monday 15th at 4 pm</span>`,
+    bracket_notes:["<b>It doesn't matter if</b> = 条件豁免（即使…也没关系）", "<b>you can't read music</b> = 通常的要求被豁免", "<b>All staff and pupils welcome</b> = 开放性邀请"],core:`Choir welcomes everyone → no need to read music → first rehearsal Monday 4pm`,
+    pairs:[{from:"doesn't matter if you can't read music",to:"you don't need to read music"}, {from:"All staff and pupils welcome",to:"everyone can join / open to all"}, {from:"First rehearsal",to:"first practice"}],options:[{id:"A",text:"It is looking for pupils who have music lessons",struck:["have music lessons"],trap:"无中生有",trap_detail:"原文未要求 music lessons",correct:false}, {id:"B",text:"Anyone can join the choir",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Only people who can already read music should come",struck:["who can already read music"],trap:"反向干扰",trap_detail:"原文 doesn't matter if you can't，与 C 完全相反",correct:false}]},
+  {id:24,test:4,num:6,type:"通知",type_en:"notice",
+    title:"What does the notice say?",text:`If you are not well and miss a class, please ask a classmate what you need to do. Then you won't fall behind`,bracket:`<span class='bracket-inside'>If you are not well and miss a class</span>, please ask a classmate <span class='bracket-inside'>what you need to do</span>. <span class='bracket-inside'>Then you won't fall behind</span>`,
+    bracket_notes:["<b>If you are not well and miss a class</b> = 条件（生病缺课）", "<b>ask a classmate what you need to do</b> = 解决方案", "<b>Then you won't fall behind</b> = 目的/好处"],core:`If ill and miss class → ask classmate → won't fall behind`,
+    pairs:[{from:"not well",to:"ill / sick"}, {from:"miss a class",to:"absent from a lesson"}, {from:"ask a classmate",to:"ask another student"}, {from:"won't fall behind",to:"keep up with the class"}],options:[{id:"A",text:"Pupils who are feeling ill should ask a friend about the lesson they missed",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"Pupils who would like to help their friends can ask about missed lessons",struck:["would like to help"],trap:"主客颠倒",trap_detail:"信息给缺课者，不是给帮忙者",correct:false}, {id:"C",text:"Pupils who fall behind in class need to ask their teacher for help",struck:["fall behind", "teacher"],trap:"偷梁换柱",trap_detail:"原文针对已缺课需补课者，不是正 feeling ill 的人；且是 ask classmate 不是 teacher",correct:false}]},
+  {id:25,test:5,num:1,type:"通知",type_en:"note",
+    title:"What does the note say about the singing practice?",text:`Please don't arrive later than 1:25, as we must all be ready by 1:30 when the singing practice starts this week`,bracket:`Please don't arrive <span class='bracket-inside'>later than 1:25</span>, <span class='bracket-inside'>as we must all be ready by 1:30</span> <span class='bracket-inside'>when the singing practice starts this week</span>`,
+    bracket_notes:["<b>later than 1:25</b> = 到达截止时间（= by 1:25）", "<b>as we must all be ready by 1:30</b> = 原因（1:30要准备好）", "<b>when the singing practice starts</b> = 活动时间"],core:`Arrive by 1:25 → ready by 1:30 → singing practice starts`,
+    pairs:[{from:"don't arrive later than 1:25",to:"must arrive by 1:25"}, {from:"must all be ready by 1:30",to:"need to be prepared at 1:30"}, {from:"singing practice starts",to:"the practice begins"}],options:[{id:"A",text:"Singing practice starts at 1:25",struck:["starts at 1:25"],trap:"时间错位",trap_detail:"1:25 是 arrive deadline，1:30 才是 ready by",correct:false}, {id:"B",text:"There is no singing practice this week",struck:["no singing practice this week"],trap:"反向干扰",trap_detail:"原文明确 starts this week",correct:false}, {id:"C",text:"Singing practice begins at 1:30 this week",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:26,test:5,num:2,type:"告示",type_en:"notice",
+    title:"What does the notice say?",text:`You may return games that aren't opened and get your money back. We do not give your money back if you have opened them`,bracket:`You may return games <span class='bracket-inside'>that aren't opened</span> and get your money back. <span class='bracket-inside'>We do not give your money back if you have opened them</span>`,
+    bracket_notes:["<b>that aren't opened</b> = 条件（未拆封）", "<b>get your money back</b> = 退款", "<b>if you have opened them</b> = 反面条件（已拆封不退）"],core:`Can return unopened games → get money back (opened = no refund)`,
+    pairs:[{from:"return games that aren't opened",to:"give back unopened games"}, {from:"get your money back",to:"receive a refund"}, {from:"opened them",to:"taken out of the packet"}],options:[{id:"A",text:"You can get your money back if the game doesn't work",struck:["doesn't work"],trap:"偷梁换柱",trap_detail:"原文 aren't opened，不是 doesn't work",correct:false}, {id:"B",text:"You can get your money back if you don't like the game",struck:["don't like"],trap:"无中生有",trap_detail:"原文未提 like",correct:false}, {id:"C",text:"You can get your money back if you bring back a game you haven't opened",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:27,test:5,num:3,type:"广告",type_en:"advert",
+    title:"What does the notice tell pupils about the book club?",text:`To join, contact Mr Sponforth. Read a book every two weeks and be ready to tell the group what you thought about it. Everyone welcome!`,bracket:`To join, contact Mr Sponforth. <span class='bracket-inside'>Read a book every two weeks</span> and <span class='bracket-inside'>be ready to tell the group what you thought about it</span>. <span class='bracket-inside'>Everyone welcome</span>!`,
+    bracket_notes:["<b>To join, contact Mr Sponforth</b> = 加入方式", "<b>Read a book every two weeks</b> = 频率要求", "<b>tell the group what you thought about it</b> = 活动内容（分享感想）", "<b>Everyone welcome</b> = 开放性"],core:`Book club: contact Mr Sponforth → read every 2 weeks → share thoughts`,
+    pairs:[{from:"To join, contact Mr Sponforth",to:"speak to Mr Sponforth to become a member"}, {from:"Read a book every two weeks",to:"read one book per fortnight"}, {from:"tell the group what you thought",to:"share your opinions with others"}, {from:"Everyone welcome",to:"all students can join"}],options:[{id:"A",text:"They should tell Mr Sponforth if they want to join",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"They can borrow a book from the club every week",struck:["borrow", "every week"],trap:"无中生有",trap_detail:"原文未提 borrow；是 every two weeks 不是 every week",correct:false}, {id:"C",text:"They must read the same book as their classmates",struck:["same book"],trap:"无中生有",trap_detail:"原文未提 same book",correct:false}]},
+  {id:28,test:5,num:4,type:"邮件",type_en:"email",
+    title:"What does Dan want his father to do?",text:`It's Sam's birthday tomorrow and I haven't got any money. Could you lend me enough to get him something from the bookshop? I'll pay you back at the weekend`,bracket:`<span class='bracket-inside'>It's Sam's birthday tomorrow and I haven't got any money</span>. Could you lend me enough <span class='bracket-inside'>to get him something from the bookshop</span>? <span class='bracket-inside'>I'll pay you back at the weekend</span>`,
+    bracket_notes:["<b>I haven't got any money</b> = 原因（没钱）", "<b>to get him something from the bookshop</b> = 目的（买书）", "<b>pay you back at the weekend</b> = 承诺（周末还）"],core:`Dan has no money for Sam's birthday gift → wants to borrow from dad → will pay back`,
+    pairs:[{from:"haven't got any money",to:"has no money"}, {from:"lend me enough",to:"borrow some money"}, {from:"get him something from the bookshop",to:"buy him a book"}, {from:"pay you back",to:"return the money"}],options:[{id:"A",text:"Go shopping with him to choose a present for Sam",struck:["with him", "choose"],trap:"无中生有",trap_detail:"原文未提 with",correct:false}, {id:"B",text:"Lend him some money to buy a present",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"Tell him what to get for Sam from the bookshop",struck:["what to get"],trap:"无中生有",trap_detail:"原文已决定去 bookshop，只是缺钱",correct:false}]},
+  {id:29,test:5,num:5,type:"通知",type_en:"notice",
+    title:"What does the notice say?",text:`We are closed this afternoon as two staff are ill and we must have at least three to open. We will open at 9 am tomorrow`,bracket:`We are closed this afternoon <span class='bracket-inside'>as two staff are ill and we must have at least three to open</span>. <span class='bracket-inside'>We will open at 9 am tomorrow</span>`,
+    bracket_notes:["<b>as two staff are ill</b> = 原因（人手不足）", "<b>must have at least three to open</b> = 开业条件（最少3人）", "<b>open at 9 am tomorrow</b> = 明日营业时间"],core:`Closed this afternoon (2 staff ill, need 3) → open 9am tomorrow`,
+    pairs:[{from:"two staff are ill",to:"staff are sick"}, {from:"must have at least three to open",to:"need three people to be open"}, {from:"open at 9 am tomorrow",to:"opens tomorrow morning at 9"}],options:[{id:"A",text:"It is closed this afternoon but it will open tomorrow morning",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"We are looking for more staff to work this afternoon",struck:["looking for more staff"],trap:"无中生有",trap_detail:"原文解释关门原因，未提 looking for",correct:false}, {id:"C",text:"Tomorrow we open at a different time",struck:["different time"],trap:"无中生有",trap_detail:"原文只说 Open at 9 am tomorrow，未说 different",correct:false}]},
+  {id:30,test:5,num:6,type:"广告",type_en:"advert",
+    title:"What does the advertisement say?",text:`Bring us your old laptop when you come to get a new one, and receive £100 off the price! Your old laptop must still work`,bracket:`<span class='bracket-inside'>Bring us your old laptop when you come to get a new one</span>, and <span class='bracket-inside'>receive £100 off the price</span>! <span class='bracket-inside'>Your old laptop must still work</span>`,
+    bracket_notes:["<b>Bring us your old laptop when you come to get a new one</b> = 条件（以旧换新）", "<b>receive £100 off</b> = 优惠金额", "<b>must still work</b> = 旧电脑的条件限制"],core:`Trade in old laptop (must work) → £100 off new laptop`,
+    pairs:[{from:"Bring us your old laptop",to:"give them your old laptop"}, {from:"get a new one",to:"buy a new laptop"}, {from:"receive £100 off",to:"get a £100 discount"}, {from:"must still work",to:"needs to be working"}],options:[{id:"A",text:"They will repair your old laptop for £100",struck:["repair"],trap:"偷梁换柱",trap_detail:"原文是 trade-in 抵价，不是 repair",correct:false}, {id:"B",text:"They are selling old laptops for £100",struck:["selling old laptops for \u00a3100"],trap:"偷梁换柱",trap_detail:"原文是 £100 off（减价），不是 for sale",correct:false}, {id:"C",text:"They will give you a discount if your old laptop is working",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:31,test:6,num:1,type:"告示",type_en:"notice",
+    title:"Where would you see this notice?",text:`Please don't eat ice creams here. They aren't good for our books!`,bracket:`Please don't eat ice creams here. <span class='bracket-inside'>They aren't good for our books</span>!`,
+    bracket_notes:["<b>Please don't eat ice creams here</b> = 禁止性请求", "<b>They aren't good for our books</b> = 原因（冰淇淋对书不好）→ 暗示地点是图书馆"],core:`No ice cream allowed here → because of books → this is a library`,
+    pairs:[{from:"don't eat ice creams here",to:"ice cream is not allowed"}, {from:"aren't good for our books",to:"will damage the books"}, {from:"our books",to:"the library books"}],options:[{id:"A",text:"in a café",struck:["caf\u00e9"],trap:"常识干扰",trap_detail:"咖啡馆通常允许吃冰淇淋",correct:false}, {id:"B",text:"in a library",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"in a picnic area",struck:["picnic area"],trap:"常识干扰",trap_detail:"野餐区允许进食，且原文提 books",correct:false}]},
+  {id:32,test:6,num:2,type:"告示",type_en:"notice",
+    title:"What does the notice say?",text:`FOUND: A small blue bag with a key inside. Contact Mrs Thompson if you think it might be yours`,bracket:`FOUND: <span class='bracket-inside'>A small blue bag with a key inside</span>. Contact Mrs Thompson <span class='bracket-inside'>if you think it might be yours</span>`,
+    bracket_notes:["<b>FOUND</b> = 失物招领标题", "<b>A small blue bag with a key inside</b> = 物品特征描述", "<b>if you think it might be yours</b> = 条件（认为可能是自己的）"],core:`Found: blue bag with key → contact Mrs Thompson if it's yours`,
+    pairs:[{from:"FOUND",to:"someone has found"}, {from:"small blue bag",to:"blue bag"}, {from:"with a key inside",to:"containing a key"}, {from:"Contact Mrs Thompson",to:"speak to Mrs Thompson"}, {from:"it might be yours",to:"if you lost it"}],options:[{id:"A",text:"You should tell Mrs Thompson if you've lost a bag with a key in it",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"You should tell Mrs Thompson if you've got an extra key",struck:["extra key"],trap:"偷梁换柱",trap_detail:"原文是认领失物，不是有多余钥匙",correct:false}, {id:"C",text:"You should tell Mrs Thompson if you know where the bag is",struck:["know where the bag is"],trap:"主客颠倒",trap_detail:"原文是认领，不是提供位置",correct:false}]},
+  {id:33,test:6,num:3,type:"邮件",type_en:"email",
+    title:"What does Helen want Linda to do?",text:`I bought two tickets for the film tonight, but Jim can't come. Are you interested? Call me!`,bracket:`<span class='bracket-inside'>I bought two tickets for the film tonight, but Jim can't come</span>. <span class='bracket-inside'>Are you interested</span>? Call me!`,
+    bracket_notes:["<b>I bought two tickets...but Jim can't come</b> = 背景（有票但人去不了）", "<b>Are you interested?</b> = 邀请/询问", "<b>Call me</b> = 联系方式"],core:`Helen has an extra ticket (Jim can't go) → offering to Linda`,
+    pairs:[{from:"bought two tickets",to:"has two tickets"}, {from:"Jim can't come",to:"Jim isn't going"}, {from:"Are you interested?",to:"wants to know if Linda wants to go"}, {from:"Call me",to:"phone her"}],options:[{id:"A",text:"Go to the cinema with her tonight",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"Ask Linda what films she's interested in",struck:["what films she's interested in"],trap:"无中生有",trap_detail:"原文已买票，不是询问偏好",correct:false}, {id:"C",text:"Tell Linda where to meet Jim",struck:["where to meet Jim"],trap:"反向干扰",trap_detail:"原文 Jim can't come",correct:false}]},
+  {id:34,test:6,num:4,type:"邮件",type_en:"email",
+    title:"What has Flora just done?",text:`Congratulations! I'm so pleased that you passed maths! Have a great birthday on Saturday – you'll be 15!`,bracket:`Congratulations! <span class='bracket-inside'>I'm so pleased that</span> you passed maths! <span class='bracket-inside'>Have a great birthday on Saturday</span> – <span class='bracket-inside'>you'll be 15</span>!`,
+    bracket_notes:["<b>Congratulations!</b> = 祝贺语", "<b>you passed maths</b> = 已完成的事件（考试通过）", "<b>Have a great birthday on Saturday</b> = 未来事件（周六还没到）", "<b>you'll be 15</b> = 将要发生的事"],core:`Flora passed maths (done) + birthday is coming Saturday (not yet)`,
+    pairs:[{from:"Congratulations",to:"well done"}, {from:"you passed maths",to:"succeeded in maths exam"}, {from:"Have a great birthday on Saturday",to:"birthday is this Saturday"}, {from:"you'll be 15",to:"turning 15"}],options:[{id:"A",text:"She has met Flora",struck:["met Flora"],trap:"无中生有",trap_detail:"原文未提 met",correct:false}, {id:"B",text:"She has had her birthday",struck:["had"],trap:"时态陷阱",trap_detail:"Have a great birthday 暗示生日将至，而 passed maths 才是已完成的 just done",correct:false}, {id:"C",text:"She has passed her maths exam",struck:[],trap:"",trap_detail:"",correct:true}]},
+  {id:35,test:6,num:5,type:"告示",type_en:"notice",
+    title:"What does the notice say?",text:`NO EXIT. The laboratory door isn't working correctly. Please use the door opposite to leave the room`,bracket:`NO EXIT. <span class='bracket-inside'>The laboratory door isn't working correctly</span>. <span class='bracket-inside'>Please use the door opposite to leave the room</span>`,
+    bracket_notes:["<b>NO EXIT</b> = 禁止性标识（此门不可出）", "<b>isn't working correctly</b> = 原因（门故障）", "<b>use the door opposite</b> = 替代方案（用对面的门）"],core:`This door broken → NO EXIT → use opposite door to leave`,
+    pairs:[{from:"NO EXIT",to:"can't leave by this door"}, {from:"isn't working correctly",to:"is broken / not functioning"}, {from:"use the door opposite",to:"use the other door across from this one"}, {from:"leave the room",to:"exit"}],options:[{id:"A",text:"Please go to the laboratory now",struck:["go to the laboratory now"],trap:"无中生有",trap_detail:"原文只是告知路线，不是催促 now",correct:false}, {id:"B",text:"Use a different door to leave the laboratory",struck:[],trap:"",trap_detail:"",correct:true}, {id:"C",text:"The laboratory is being used by other people",struck:["being used by other people"],trap:"无中生有",trap_detail:"原文未提被占用",correct:false}]},
+  {id:36,test:6,num:6,type:"邮件",type_en:"email",
+    title:"What does Matt say in his message?",text:`Thanks to all my guests! I had a great party. Hope you've made new friends. I'll add the pictures I took to my website this week`,bracket:`<span class='bracket-inside'>Thanks to all my guests</span>! <span class='bracket-inside'>I had a great party</span>. <span class='bracket-inside'>Hope you've made new friends</span>. <span class='bracket-inside'>I'll add the pictures I took to my website this week</span>`,
+    bracket_notes:["<b>Thanks to all my guests</b> = 感谢来宾", "<b>I had a great party</b> = 聚会很愉快", "<b>Hope you've made new friends</b> = 祝愿", "<b>the pictures I took</b> = 自己拍的照片（定语从句）"],core:`Matt thanks guests → party was great → will post photos he took online`,
+    pairs:[{from:"Thanks to all my guests",to:"thanking the people who came"}, {from:"I had a great party",to:"the party was enjoyable"}, {from:"made new friends",to:"met new people"}, {from:"the pictures I took",to:"photos he took"}, {from:"add...to my website",to:"put...online / upload"}],options:[{id:"A",text:"He will put some photos he took on the internet",struck:[],trap:"",trap_detail:"",correct:true}, {id:"B",text:"He will put a picture that he saw on his website",struck:["saw"],trap:"偷梁换柱",trap_detail:"原文 pictures I took，不是 saw",correct:false}, {id:"C",text:"He wants to thank some people that he has just met",struck:["has just met"],trap:"偷梁换柱",trap_detail:"原文是对 guests 致谢，不是写刚认识的人",correct:false}]},
+];
+
+function adaptQuestions(ketQuestions) {
+  return ketQuestions.map(q => {
+    const textChunks = [];
+    const addedTexts = new Set();
+    q.pairs.forEach(p => {
+      if (!addedTexts.has(p.from)) {
+        textChunks.push({
+          words: p.from.split(/\s+/).filter(w => w),
+          type: 'key',
+          text: p.from
+        });
+        addedTexts.add(p.from);
+      }
+    });
+    const extraWords = ['not','no','never','only','must','before','after','if','until','instead'];
+    extraWords.forEach(ew => {
+      const regex = new RegExp('\\b' + ew.replace(/'/g,"\\'") + '\\b', 'i');
+      if (regex.test(q.text) && !addedTexts.has(ew)) {
+        const match = q.text.match(new RegExp('\\b' + ew.replace(/'/g,"\\'") + '\\b', 'i'));
+        if (match) {
+          textChunks.push({
+            words: [match[0]],
+            type: ew === 'not' || ew === 'no' || ew.includes("n't") ? 'negation' : 'limit',
+            text: match[0]
+          });
+          addedTexts.add(ew);
+        }
+      }
+    });
+
+    const chunkTable = textChunks.map(tc => ({
+      text: tc.text,
+      color: tc.type,
+      typeLabel: tc.type === 'negation' ? '否定' : (tc.type === 'limit' ? '限定' : '关键词'),
+      reason: '核心信息'
+    }));
+
+    let bracketedText = q.text;
+    if (q.bracket) {
+      bracketedText = q.bracket.replace(/<span class='bracket-inside'>(.*?)<\/span>/g, '($1)');
+      bracketedText = bracketedText.replace(/<[^>]+>/g, '');
+    }
+
+    const bracketNotes = q.bracket_notes.map(noteHtml => {
+      const bMatch = noteHtml.match(/<b>(.*?)<\/b>/);
+      const bracket = bMatch ? bMatch[1] : '';
+      let note = noteHtml.replace(/<[^>]+>/g, '');
+      if (bracket) {
+        note = note.replace(bracket, '').replace(/^=\s*/, '').trim();
+      }
+      return { bracket, note };
+    });
+
+    let retellKeywords = [];
+    if (q.core) {
+      const words = q.core.match(/[a-zA-Z]+/g) || [];
+      const stopWords = ['the','and','for','are','with','his','her','you','this','that','they','them','have','has','had','been','was','were','will','would','could','should','not','from','about','into','over','after','then'];
+      retellKeywords = words.filter(w => w.length > 3 && !stopWords.includes(w.toLowerCase())).slice(0, 3);
+    }
+    if (retellKeywords.length < 2 && q.pairs.length > 0) {
+      const extra = q.pairs.slice(0, 2).map(p => {
+        const fw = p.from.match(/[a-zA-Z]+/g) || [];
+        return fw.find(w => w.length > 3) || fw[0];
+      }).filter(Boolean);
+      retellKeywords = [...new Set([...retellKeywords, ...extra])].slice(0, 3);
+    }
+
+    const options = q.options.map(opt => ({
+      id: opt.id,
+      chunk: opt.text,
+      full: opt.text + (opt.text.endsWith('.') ? '' : '.'),
+      isCorrect: opt.correct,
+      trapType: opt.trap || null,
+      trapDetail: opt.trap_detail || null,
+      wrongParts: opt.struck || [],
+      synonymPairs: opt.correct ? q.pairs.map(p => ({ from: p.from, to: p.to })) : []
+    }));
+
+    return {
+      id: q.id,
+      test: q.test,
+      num: q.num,
+      type: q.type_en,
+      typeLabel: q.type,
+      question: q.title,
+      text: q.text,
+      core: q.core,
+      textChunks,
+      chunkTable,
+      bracketedText,
+      bracketNotes,
+      retellKeywords,
+      options
+    };
+  });
+}
+
+/* ===== 状态 ===== */
+let data = { title: "KET Part 1 语义建构训练器", questions: adaptQuestions(RAW_QUESTIONS) };
+let currentQid = 1;
+let selectedOption = null;
+let checked = {};
+let userMarks = {};
+let struckWords = {};
+let eliminatedOptions = {};
+let synonymState = {};
+let retellDone = {};
+let preMapState = {};
+let answeredQuestions = {};
+
+const COLORS = {
+  key:       { bg: '#FFD93D', label: '关键词',   dot: '#FFD93D', icon: '🔑' },
+  negation:  { bg: '#FB7185', label: '否定',     dot: '#FB7185', icon: '⛔' },
+  limit:     { bg: '#60A5FA', label: '限定',     dot: '#60A5FA', icon: '📍' }
+};
+
+/* ===== 语音 ===== */
+let recognition = null;
+let isRecording = false;
+
+function initSpeech() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return false;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    handleVoiceResult(transcript);
+  };
+  recognition.onerror = () => {
+    isRecording = false;
+    updateMicBtn(false);
+    showVoiceMsg('语音识别出错，请再试一次', 'err');
+    showFallbackInput();
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    updateMicBtn(false);
+  };
+  return true;
+}
+
+function toggleVoice() {
+  if (!recognition && !initSpeech()) {
+    showVoiceMsg('浏览器不支持语音，请用文字输入', 'err');
+    showFallbackInput();
+    return;
+  }
+  if (isRecording) {
+    recognition.stop();
+    isRecording = false;
+    updateMicBtn(false);
+  } else {
+    recognition.start();
+    isRecording = true;
+    updateMicBtn(true);
+    showVoiceMsg('正在听…请说出核心意思', null);
+  }
+}
+
+function handleVoiceResult(text) {
+  const q = data.questions.find(x => x.id === currentQid);
+  const keywords = q.retellKeywords || [];
+  const lower = text.toLowerCase();
+  let hit = 0;
+  keywords.forEach(k => { if (lower.includes(k.toLowerCase())) hit++; });
+
+  const resultBox = document.getElementById('voiceResultBox');
+  const resultText = document.getElementById('voiceResultText');
+  const resultStatus = document.getElementById('voiceResultStatus');
+
+  if (resultBox) resultBox.classList.add('show');
+  if (resultText) resultText.textContent = '你说的是："' + text + '"';
+
+  if (hit >= 1) {
+    retellDone[currentQid] = true;
+    if (resultStatus) {
+      resultStatus.textContent = '✓ 说到关键词了！语义压缩通过';
+      resultStatus.className = 'voice-result-status ok';
+    }
+    showVoiceMsg('语义压缩通过！', 'ok');
+    setTimeout(() => renderQuestion(currentQid), 600);
+  } else {
+    if (resultStatus) {
+      resultStatus.textContent = '⚠ 需提到：' + keywords.join('、');
+      resultStatus.className = 'voice-result-status err';
+    }
+    showVoiceMsg('没说到核心词，请再试', 'err');
+    showFallbackInput();
+  }
+}
+
+function updateMicBtn(recording) {
+  const btn = document.getElementById('micBtn');
+  if (btn) btn.classList.toggle('recording', recording);
+}
+function showVoiceMsg(msg, type) {
+  const el = document.getElementById('voiceMsg');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'voice-result-status ' + (type || '');
+  if (type === 'ok') el.style.color = '#059669';
+  if (type === 'err') el.style.color = '#e53935';
+  if (!type) el.style.color = 'var(--text-light)';
+}
+function showFallbackInput() {
+  const el = document.getElementById('fallbackInput');
+  if (el) el.classList.add('show');
+}
+
+function showCorrectExpression(qid) {
+  retellDone[qid] = true;
+  renderQuestion(qid);
+}
+function submitFallbackRetell() {
+  const input = document.getElementById('fallbackInput');
+  const val = input ? input.value.trim() : '';
+  if (!val) { alert('请输入复述内容'); return; }
+  handleVoiceResult(val);
+}
+
+/* ===== 核心功能函数 ===== */
+function getMarkedChunks(qid) {
+  const marks = userMarks[qid] || {};
+  const entries = Object.entries(marks).map(([idx, type]) => ({idx: +idx, type})).sort((a,b) => a.idx - b.idx);
+  if (!entries.length) return [];
+  const q = data.questions.find(x => x.id === qid);
+  const tokens = q.text.split(/(\s+)/);
+  const chunks = [];
+  let current = { type: entries[0].type, indices: [entries[0].idx] };
+  for (let i = 1; i < entries.length; i++) {
+    const prevIdx = current.indices[current.indices.length - 1];
+    const currIdx = entries[i].idx;
+    const gap = currIdx - prevIdx;
+    const isAdjacent = gap <= 2;
+    const sameType = entries[i].type === current.type;
+    if (sameType && isAdjacent) {
+      current.indices.push(currIdx);
+    } else {
+      chunks.push(current);
+      current = { type: entries[i].type, indices: [entries[i].idx] };
+    }
+  }
+  chunks.push(current);
+  return chunks.map(c => {
+    const min = Math.min(...c.indices);
+    const max = Math.max(...c.indices);
+    const text = tokens.slice(min, max + 1).join('').trim();
+    return { type: c.type, text };
+  });
+}
+
+function isSemanticLocked(qid) {
+  const q = data.questions.find(x => x.id === qid);
+  if (checked[qid]) return false;
+  if (!retellDone[qid]) return true;
+  let requiredPairs = 0;
+  q.options.forEach(opt => { if (opt.synonymPairs) requiredPairs += opt.synonymPairs.length; });
+  if (requiredPairs > 0) {
+    const state = preMapState[qid];
+    const doneCount = state ? state.matchedPairs.length : 0;
+    if (doneCount < requiredPairs) return true;
+  }
+  return false;
+}
+
+function toggleTable(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+function toggleBracket(el) {
+  el.classList.toggle('open');
+  const stepSection = el.closest('.step-section');
+  if (stepSection) {
+    const wrap = stepSection.querySelector('.bracket-notes-wrap');
+    if (wrap) wrap.classList.toggle('open');
+  }
+}
+function toggleViewText(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderTextWords(q, marks){
+  const content = document.getElementById('textContent');
+  if(!content) return;
+  const tokens = q.text.split(/(\s+)/);
+  let html = '';
+  tokens.forEach((token, idx)=>{
+    if(!token.trim()){ html += token; return; }
+    let cls = 'word';
+    const m = marks[idx];
+    if(m) cls += ' marked-' + m;
+    html += '<span class="' + cls + '" onclick="onWordClick(this,' + idx + ')">' + escapeHtml(token) + '</span>';
+  });
+  content.innerHTML = html;
+}
+
+function onWordClick(el, idx){
+  if(checked[currentQid]) return;
+  document.querySelectorAll('.color-picker').forEach(p=>p.remove());
+  const picker = document.createElement('div');
+  picker.className = 'color-picker show';
+  picker.innerHTML = 
+    '<span class="color-dot" style="background:'+COLORS.key.dot+'" onclick="markWord('+idx+',\'key\')"></span>' +
+    '<span class="color-dot" style="background:'+COLORS.negation.dot+'" onclick="markWord('+idx+',\'negation\')"></span>' +
+    '<span class="color-dot" style="background:'+COLORS.limit.dot+'" onclick="markWord('+idx+',\'limit\')"></span>' +
+    '<span class="color-dot clear" onclick="unmarkWord('+idx+')">×</span>';
+  el.appendChild(picker);
+  setTimeout(()=>{
+    document.addEventListener('click', function close(e){
+      if(!el.contains(e.target)){ picker.remove(); document.removeEventListener('click', close); }
+    });
+  }, 10);
+}
+
+function markWord(idx, type){
+  if(!userMarks[currentQid]) userMarks[currentQid] = {};
+  userMarks[currentQid][idx] = type;
+  document.querySelectorAll('.color-picker').forEach(p=>p.remove());
+  renderQuestion(currentQid);
+}
+function unmarkWord(idx){
+  if(userMarks[currentQid]) delete userMarks[currentQid][idx];
+  document.querySelectorAll('.color-picker').forEach(p=>p.remove());
+  renderQuestion(currentQid);
+}
+
+function renderPreSynonymArea(q, qid) {
+  const allPairs = [];
+  q.options.forEach(opt => { if (opt.synonymPairs) opt.synonymPairs.forEach(p => allPairs.push({...p})); });
+  if (!allPairs.length) return '<div class="step-hint">这道题没有同义替换配对，直接进第四步吧！</div>';
+
+  const state = preMapState[qid] || { selectedFrom: null, matchedPairs: [] };
+  const matched = state.matchedPairs || [];
+
+  const fromPool = [];
+  q.textChunks.forEach(tc => { if (['key','negation','limit'].includes(tc.type)) fromPool.push({text: tc.text, type: tc.type}); });
+  const toPool = [...new Set(allPairs.map(p => p.to))];
+
+  let html = '<div class="pre-synonym-area">';
+  html += '<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:4px;font-weight:700;">🟡 原文词块</div>';
+  html += '<div class="pair-pool">';
+  fromPool.forEach(f => {
+    const isMatched = matched.some(m => m.from === f.text);
+    const isSelected = state.selectedFrom === f.text;
+    let cls = 'pair-pill from' + (isMatched?' matched':'') + (isSelected?' selected':'');
+    html += '<span class="' + cls + '" data-from="' + escapeHtml(f.text) + '" onclick="preSynSelectFrom(' + qid + ',this.dataset.from)">' + escapeHtml(f.text) + '</span>';
+  });
+  html += '</div>';
+  html += '<div class="pair-arrow">⬇</div>';
+  html += '<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:4px;font-weight:700;">🔵 选项表达</div>';
+  html += '<div class="pair-pool">';
+  toPool.forEach(t => {
+    const isMatched = matched.some(m => m.to === t);
+    let cls = 'pair-pill to' + (isMatched?' matched':'');
+    html += '<span class="' + cls + '" data-to="' + escapeHtml(t) + '" onclick="preSynSelectTo(' + qid + ',this.dataset.to)">' + escapeHtml(t) + '</span>';
+  });
+  html += '</div>';
+  if (matched.length) {
+    html += '<div class="pair-matched">';
+    matched.forEach(m => { html += '<div class="pair-match-row">' + escapeHtml(m.from) + ' → ' + escapeHtml(m.to) + ' ✓</div>'; });
+    html += '</div>';
+  }
+  const fbId = 'pre-syn-feedback-' + qid;
+  html += '<div class="synonym-feedback" id="' + fbId + '"></div>';
+  html += '</div>';
+  return html;
+}
+
+function preSynSelectFrom(qid, fromText) {
+  if (!preMapState[qid]) preMapState[qid] = { selectedFrom: null, matchedPairs: [] };
+  const state = preMapState[qid];
+  if (state.matchedPairs.some(m => m.from === fromText)) return;
+  state.selectedFrom = fromText;
+  renderQuestion(qid);
+}
+function preSynSelectTo(qid, toText) {
+  const state = preMapState[qid];
+  if (!state || !state.selectedFrom) {
+    const fb = document.getElementById('pre-syn-feedback-' + qid);
+    if (fb) { fb.textContent = '⚠️ 请先点上方黄色「原文词块」'; fb.className = 'synonym-feedback err'; }
+    return;
+  }
+  const q = data.questions.find(x => x.id === qid);
+  let valid = false;
+  q.options.forEach(opt => { if (opt.synonymPairs) opt.synonymPairs.forEach(p => { if (p.from === state.selectedFrom && p.to === toText) valid = true; }); });
+  const fb = document.getElementById('pre-syn-feedback-' + qid);
+  if (valid) {
+    state.matchedPairs.push({ from: state.selectedFrom, to: toText });
+    state.selectedFrom = null;
+    if (fb) { fb.textContent = '🎉 配对正确！'; fb.className = 'synonym-feedback ok'; }
+    renderQuestion(qid);
+  } else {
+    state.selectedFrom = null;
+    if (fb) { fb.textContent = '❌ 配对错误，请重新选择'; fb.className = 'synonym-feedback err'; }
+    renderQuestion(qid);
+  }
+}
+
+function selectOption(oid){
+  if(checked[currentQid]) return;
+  if(isSemanticLocked(currentQid)) { alert('请先完成第二步「语义压缩」和第三步「语义解码」'); return; }
+  const eliminated = eliminatedOptions[currentQid] || [];
+  if(eliminated.includes(oid)) return;
+  selectedOption = oid;
+  renderQuestion(currentQid);
+}
+
+function checkCurrent(){
+  if(isSemanticLocked(currentQid)) { alert('请先完成第二步和第三步'); return; }
+  if(!selectedOption){ alert('请先选择一个选项'); return; }
+  checked[currentQid] = true;
+  const q = data.questions.find(x => x.id === currentQid);
+  const opt = q.options.find(o => o.id === selectedOption);
+  const isCorrect = opt && opt.isCorrect;
+  updateNavStatus(currentQid, isCorrect);
+  renderQuestion(currentQid);
+}
+
+function renderOptionChunk(qid, opt, isEliminated, isChecked){
+  const words = opt.chunk.split(/(\s+)/).filter(w=>w.trim());
+  const sw = (struckWords[qid] && struckWords[qid][opt.id]) || [];
+  let html = '';
+  words.forEach((word, widx)=>{
+    let cls = 'opt-word';
+    const isStruck = sw.includes(widx);
+    const isWrong = opt.wrongParts && opt.wrongParts.some(wp=>{
+      const wl = word.toLowerCase().replace(/[^a-z]/g,'');
+      const pl = wp.toLowerCase().replace(/[^a-z]/g,'');
+      return wl && pl && (wl.includes(pl) || pl.includes(wl));
+    });
+    if(isStruck) cls += ' struck';
+    const onclick = (!isChecked && !isEliminated && !isStruck && isWrong) 
+      ? 'onclick="eliminateOption(' + qid + ',\'' + opt.id + '\',' + widx + ',event)"' : '';
+    html += '<span class="' + cls + '" ' + onclick + '>' + escapeHtml(word) + '</span>';
+  });
+  return html;
+}
+
+function eliminateOption(qid, optId, widx, event){
+  event.stopPropagation();
+  if(isSemanticLocked(qid)) { alert('请先完成第二步和第三步'); return; }
+  if(!struckWords[qid]) struckWords[qid] = {};
+  if(!struckWords[qid][optId]) struckWords[qid][optId] = [];
+  if(!struckWords[qid][optId].includes(widx)) struckWords[qid][optId].push(widx);
+  if(!eliminatedOptions[qid]) eliminatedOptions[qid] = [];
+  if(!eliminatedOptions[qid].includes(optId)) eliminatedOptions[qid].push(optId);
+  if(selectedOption === optId) selectedOption = null;
+  renderQuestion(qid);
+}
+
+function prevQuestion() {
+  if (currentQid > 1) {
+    switchToQuestion(currentQid - 1);
+  }
+}
+function nextQuestion() {
+  if (currentQid < 36) {
+    switchToQuestion(currentQid + 1);
+  }
+}
+
+function resetAll(){
+  if(!confirm('确定重置所有进度？')) return;
+  currentQid = 1;
+  selectedOption = null;
+  checked = {};
+  userMarks = {};
+  struckWords = {};
+  eliminatedOptions = {};
+  synonymState = {};
+  retellDone = {};
+  preMapState = {};
+  answeredQuestions = {};
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('correct', 'wrong');
+  });
+  switchToQuestion(1);
+}
+
+/* ===== KET保留函数 ===== */
+function switchToQuestion(qid) {
+  currentQid = qid;
+  selectedOption = null;
+  document.getElementById('questionView').classList.add('active');
+  document.getElementById('wallView').classList.remove('active');
+  document.getElementById('vocabView').classList.remove('active');
+  document.getElementById('wallNavItem').classList.remove('active');
+  document.getElementById('vocabNavItem').classList.remove('active');
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.remove('active');
+    if (parseInt(el.dataset.qid) === qid) el.classList.add('active');
+  });
+  renderQuestion(qid);
+  document.getElementById('mainContent').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchToWall() {
+  document.getElementById('questionView').classList.remove('active');
+  document.getElementById('wallView').classList.add('active');
+  document.getElementById('vocabView').classList.remove('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('wallNavItem').classList.add('active');
+  document.getElementById('vocabNavItem').classList.remove('active');
+  document.getElementById('mainContent').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchToVocab() {
+  document.getElementById('questionView').classList.remove('active');
+  document.getElementById('wallView').classList.remove('active');
+  document.getElementById('vocabView').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('wallNavItem').classList.remove('active');
+  document.getElementById('vocabNavItem').classList.add('active');
+  document.getElementById('mainContent').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleTest(label) {
+  const grid = label.nextElementSibling;
+  if (!grid) return;
+  grid.classList.toggle('collapsed');
+  label.classList.toggle('collapsed');
+}
+
+function filterWall(filter) {
+  document.querySelectorAll('.wall-filter-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.wall-section').forEach(sec => {
+    if (filter === 'all' || sec.dataset.test === filter) {
+      sec.style.display = 'block';
+    } else {
+      sec.style.display = 'none';
+    }
+  });
+}
+
+function updateNavStatus(qid, isCorrect) {
+  const items = document.querySelectorAll('.nav-item');
+  for (let item of items) {
+    if (parseInt(item.dataset.qid) === qid) {
+      item.classList.remove('correct', 'wrong');
+      item.classList.add(isCorrect ? 'correct' : 'wrong');
+      break;
+    }
+  }
+}
+
+function initWatermark() {
+  const container = document.getElementById('watermark');
+  const text = '林老师英语工作室';
+  const lineHeight = 85, colWidth = 240;
+  const rows = Math.ceil(window.innerHeight / lineHeight) + 6;
+  const cols = Math.ceil(window.innerWidth / colWidth) + 3;
+  let html = '';
+  for (let i = -3; i < rows; i++) {
+    for (let j = -1; j < cols; j++) {
+      html += '<div class="watermark-line" style="top:' + (i*lineHeight) + 'px;left:' + (j*colWidth) + 'px;">' + text + '</div>';
+    }
+  }
+  container.innerHTML = html;
+}
+
+function initFloatingEmojis() {
+  const container = document.getElementById('floatingEmojis');
+  const emojis = ['✨','📚','🎯','💡','🏆'];
+  emojis.forEach((emoji, i) => {
+    const el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.textContent = emoji;
+    el.style.left = (6 + i * 18 + Math.random()*6) + '%';
+    el.style.top = (6 + Math.random()*65) + '%';
+    el.style.animationDelay = (i * 1.1) + 's';
+    el.style.animationDuration = (6 + Math.random()*5) + 's';
+    container.appendChild(el);
+  });
+}
+
+function speakWord(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'en-US';
+  utter.rate = 0.9;
+  utter.pitch = 1;
+  window.speechSynthesis.speak(utter);
+}
+
+function assessWord(word, btn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('浏览器不支持语音识别');
+    return;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = 'en-US';
+  rec.continuous = false;
+  rec.interimResults = false;
+
+  btn.classList.add('recording');
+  btn.textContent = '...';
+
+  rec.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const ok = transcript.toLowerCase().includes(word.toLowerCase()) || 
+               levenshtein(transcript.toLowerCase(), word.toLowerCase()) <= 2;
+    btn.classList.remove('recording');
+    btn.textContent = ok ? '✓' : '✗';
+    btn.style.background = ok ? '#34D399' : '#e53935';
+    setTimeout(() => {
+      btn.textContent = '🎤';
+      btn.style.background = '';
+    }, 1500);
+  };
+
+  rec.onerror = () => {
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+  };
+
+  rec.start();
+}
+
+function assessVocab(word, btn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('浏览器不支持语音识别');
+    return;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = 'en-US';
+  rec.continuous = false;
+  rec.interimResults = false;
+
+  const resultEl = document.getElementById('vocab-result-' + word);
+
+  btn.classList.add('recording');
+  btn.textContent = '...';
+
+  rec.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const ok = transcript.toLowerCase().includes(word.toLowerCase()) || 
+               levenshtein(transcript.toLowerCase(), word.toLowerCase()) <= 2;
+    btn.classList.remove('recording');
+    btn.textContent = ok ? '✓' : '✗';
+    btn.style.background = ok ? '#34D399' : '#e53935';
+
+    if (resultEl) {
+      resultEl.textContent = ok ? '✓ 发音正确！' : '✗ 识别到：' + transcript;
+      resultEl.style.color = ok ? '#059669' : '#e53935';
+    }
+
+    setTimeout(() => {
+      btn.textContent = '🎤';
+      btn.style.background = '';
+    }, 1500);
+  };
+
+  rec.onerror = () => {
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+    if (resultEl) {
+      resultEl.textContent = '识别出错，请再试';
+      resultEl.style.color = '#e53935';
+    }
+  };
+
+  rec.start();
+}
+
+function levenshtein(a, b) {
+  if (!a || !b) return Math.max(a?a.length:0, b?b.length:0);
+  const m = [];
+  for (let i=0;i<=b.length;i++) m[i]=[i];
+  for (let j=0;j<=a.length;j++) m[0][j]=j;
+  for (let i=1;i<=b.length;i++) for (let j=1;j<=a.length;j++) {
+    m[i][j] = b[i-1]===a[j-1] ? m[i-1][j-1] : Math.min(m[i-1][j-1]+1, m[i][j-1]+1, m[i-1][j]+1);
+  }
+  return m[b.length][a.length];
+}
+
+/* ===== 渲染题目（原始.html版本适配KET DOM） ===== */
+function renderQuestion(qid){
+  const q = data.questions.find(x=>x.id===qid);
+  if(!q) return;
+  const isChecked = checked[qid];
+  const marks = userMarks[qid] || {};
+  const eliminated = eliminatedOptions[qid] || [];
+  const locked = !isChecked && isSemanticLocked(qid);
+
+  let html = '';
+
+  /* ========== 步骤一 ========== */
+  html += '<div class="step-section s1">';
+  html += '<div class="step-header">🔍 第一步：圈出关键词块</div>';
+  html += '<div class="step-hint">点击原文单词，涂上颜色。词块会自动合并显示在上方。</div>';
+  html += '<div class="q-info"><span class="q-badge">' + q.typeLabel + '</span><span class="q-title">' + escapeHtml(q.question) + '</span></div>';
+
+  const chunks = getMarkedChunks(qid);
+  html += '<div class="chunk-bar ' + (chunks.length ? '' : 'empty') + '">';
+  chunks.forEach(c => {
+    const cfg = COLORS[c.type];
+    html += '<span class="chunk-tag ' + c.type + '">' + cfg.icon + ' ' + escapeHtml(c.text) + '</span>';
+  });
+  html += '</div>';
+
+  html += '<div class="legend-bar">';
+  Object.entries(COLORS).forEach(([key, val])=>{
+    html += '<div class="legend-item"><span class="legend-dot" style="background:' + val.dot + '"></span>' + val.label + '</div>';
+  });
+  html += '</div>';
+
+  html += '<div class="text-box"><div class="text-label">Trainer 1 · TEST ' + (q.test||'') + ' · 第' + (q.num||'') + '题 · 阅读原文</div><div class="text-content" id="textContent"></div></div>';
+
+  html += '<div class="chunk-table-toggle" onclick="toggleTable(this)">📖 词块说明书（点击展开）</div>';
+  html += '<table class="chunk-table"><thead><tr><th>词块</th><th>颜色</th><th>类型</th><th>为什么重要</th></tr></thead><tbody>';
+  (q.chunkTable || []).forEach(row => {
+    const colorName = row.color==='key'?'🟡 黄':(row.color==='negation'?'🔴 红':'🔵 蓝');
+    html += '<tr><td><span class="td-block ' + row.color + '">' + escapeHtml(row.text) + '</span></td><td><span class="td-block ' + row.color + '">' + colorName + '</span></td><td>' + row.typeLabel + '</td><td>' + row.reason + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '</div>';
+
+  /* ========== 步骤二 ========== */
+  html += '<div class="step-section s2">';
+  html += '<div class="step-header">🦴 第二步：剥掉外壳，取出核心</div>';
+  html += '<div class="step-hint">灰色括号里是「外壳」（修饰语、从句），剥掉后就是主干。然后点 🎤 说出核心意思。</div>';
+
+  const hasBracket = q.bracketedText && q.bracketNotes && q.bracketNotes.length;
+  if (hasBracket) {
+    let txt = escapeHtml(q.bracketedText);
+    txt = txt.replace(/\(([^)]+)\)/g, '<span class="bracket-paren">(</span><span class="bracket-inside">$1</span><span class="bracket-paren">)</span>');
+    html += '<div class="bracket-text">' + txt + '</div>';
+
+    html += '<div class="bracket-toolbar">';
+    html += '<div class="bracket-toggle" onclick="toggleBracket(this)">📎 括号注释（点击展开）</div>';
+    html += '<button class="mic-btn" id="micBtn" onclick="toggleVoice()">🎤</button>';
+    html += '<button class="btn btn-secondary" style="margin-left:10px;font-size:0.85rem;padding:8px 14px;" onclick="showCorrectExpression(' + qid + ')">💡 显示正确表达</button>';
+    html += '</div>';
+
+    html += '<div class="bracket-notes-wrap">';
+    q.bracketNotes.forEach(bn => {
+      html += '<div class="bracket-note"><span class="bracket-note-label">(' + escapeHtml(bn.bracket) + ')</span>' + escapeHtml(bn.note) + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="step-hint">这段文字比较短，没有复杂的外壳。直接说出核心意思吧！</div>';
+    html += '<div class="text-box" style="margin-bottom:10px;"><div class="text-content">' + escapeHtml(q.text) + '</div></div>';
+    html += '<div class="bracket-toolbar">';
+    html += '<button class="mic-btn" id="micBtn" onclick="toggleVoice()">🎤</button>';
+    html += '<button class="btn btn-secondary" style="margin-left:10px;font-size:0.85rem;padding:8px 14px;" onclick="showCorrectExpression(' + qid + ')">💡 显示正确表达</button>';
+    html += '</div>';
+  }
+
+  const done = retellDone[qid];
+  const prompts = { notice:'用一句话说出这条通知的核心要求', email:'用一句话说出这封邮件的请求', advert:'用一句话说出这个广告的优惠内容', message:'用一句话说出这条信息的目的', note:'用一句话说出这条通知的核心意思' };
+  const prompt = prompts[q.type] || '用一句话说出这段文字的核心意思';
+
+  html += '<div style="margin-top:8px;font-size:0.85rem;color:var(--text-light);">' + prompt + '</div>';
+
+  html += '<div class="voice-result-box" id="voiceResultBox">';
+  html += '<div class="voice-result-text" id="voiceResultText"></div>';
+  html += '<div class="voice-result-status" id="voiceResultStatus"></div>';
+  html += '<div class="voice-result-status" id="voiceMsg" style="margin-top:4px;"></div>';
+  html += '<input type="text" class="fallback-input" id="fallbackInput" placeholder="浏览器不支持语音？在此输入文字…" onkeydown="if(event.key===\'Enter\')submitFallbackRetell()">';
+  html += '</div>';
+
+  if (done) {
+    html += '<div style="margin-top:8px;color:#065F46;font-weight:700;font-size:0.9rem;">✓ 已完成语义压缩：' + escapeHtml(q.core || '') + '</div>';
+  }
+  html += '</div>';
+
+  /* ========== 步骤三 ========== */
+  html += '<div class="step-section s3">';
+  html += '<div class="step-header">🔗 第三步：连连看 — 原文 = 选项</div>';
+  html += '<div class="step-hint">先点黄色「原文词块」，再点蓝色「选项表达」。全部配对完成才能进第四步！</div>';
+  html += renderPreSynonymArea(q, qid);
+  html += '</div>';
+
+  /* ========== 步骤四 ========== */
+  html += '<div class="step-section s4">';
+  html += '<div class="step-header">🎯 第四步：排除错误，选出答案</div>';
+
+  html += '<div class="view-text-toggle" onclick="toggleViewText(this)">👁️ 查看题目原文</div>';
+  html += '<div class="view-text-wrap">';
+  html += '<div class="text-box" style="margin-bottom:10px;"><div class="text-content">' + escapeHtml(q.text) + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="step-hint">点击选项里的「错误词」排除该选项（变灰）。排除完后，点正确选项，再按「检查」。</div>';
+  if (locked) {
+    html += '<div class="options-locked-hint">🔒 请先完成第二步「语义压缩」和第三步「语义解码」</div>';
+  }
+  html += '<div class="options-title">选项（点错误词排除，排除后显示✗）：</div>';
+  html += '<div class="options-grid ' + (locked ? 'locked' : '') + '">';
+  q.options.forEach(opt=>{
+    const isElim = eliminated.includes(opt.id);
+    const isSel = selectedOption === opt.id && !isChecked && !isElim;
+    let cls = 'option-card';
+    if(isElim) cls += ' eliminated';
+    else if(isSel) cls += ' selected';
+    if(isChecked) {
+      cls += ' revealed';
+      if(opt.isCorrect) cls += ' correct-reveal';
+      else if(selectedOption === opt.id) cls += ' wrong-reveal';
+    }
+    const onclick = (!isElim && !isChecked && !locked) ? 'onclick="selectOption(\'' + opt.id + '\')"' : '';
+    html += '<div class="' + cls + '" ' + onclick + '>';
+    html += '<div class="option-id">' + opt.id + '</div>';
+    html += '<div class="option-chunk">' + renderOptionChunk(qid, opt, isElim, isChecked) + '</div>';
+    html += '<div class="option-full">' + escapeHtml(opt.full) + '</div>';
+    if(isChecked && !opt.isCorrect && opt.trapType){
+      html += '<div class="trap-badge trap-distractor">' + opt.trapType + '</div>';
+      html += '<div class="trap-detail">' + escapeHtml(opt.trapDetail) + '</div>';
+    }
+    if(isChecked && opt.isCorrect && opt.synonymPairs){
+      html += '<div style="margin-top:8px;padding:8px;background:#ECFDF5;border-radius:8px;">';
+      html += '<div style="font-weight:700;color:#065F46;margin-bottom:4px;font-size:0.85rem;">✓ 同义替换对照</div>';
+      opt.synonymPairs.forEach(p=>{
+        html += '<div style="font-size:0.8rem;color:#455a64;margin-bottom:2px;"><span style="background:var(--sunshine-light);padding:2px 4px;border-radius:4px;">'+escapeHtml(p.from)+'</span> → <span style="background:var(--sky-light);padding:2px 4px;border-radius:4px;">'+escapeHtml(p.to)+'</span></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  if(isChecked){
+    const opt = q.options.find(o=>o.id===selectedOption);
+    const correct = opt && opt.isCorrect;
+    html += '<div class="feedback ' + (correct?'correct':'wrong') + ' show">';
+    html += correct ? '🎉 正确！你已完成语义建构与排除干扰的全过程。' : '❌ 错误 -> 正确答案为 ' + q.options.find(o=>o.isCorrect).id;
+    html += '</div>';
+  }
+
+  html += '<div class="action-bar">';
+  html += '<button class="btn btn-primary" onclick="checkCurrent()">检查本题</button>';
+  html += '<button class="btn btn-secondary" onclick="prevQuestion()">上一题</button>';
+  html += '<button class="btn btn-secondary" onclick="nextQuestion()">下一题</button>';
+  html += '</div>';
+  html += '</div>';
+
+  document.getElementById('dynamicQuestionContent').innerHTML = html;
+  renderTextWords(q, marks);
+}
+
+// 初始化
+initWatermark();
+initFloatingEmojis();
+renderQuestion(1);
+
+</script>
+
+</body>
+</html>
